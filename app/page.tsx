@@ -1,23 +1,14 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { EvidenceModal } from "./components/evidence-modal";
 import { coordinators, levelCoordination, semesterCoordination } from "./coordination-data";
+import { academicComponents, cycles, programmeRules, prototypeCohort, workspaceNavigation, type Cycle } from "./portal-config";
 
 type Role = "student" | "courseHead" | "mentor";
 type Theme = "light" | "dark" | "system";
 type MentorKind = "domain" | "team";
-type Cycle = { id: string; semester: string; level: number; title: string; weeks: string; status: "Active" | "Upcoming" | "Completed"; progress: number };
 
-const cycles: Cycle[] = [
-  { id: "LC-08", semester: "Semester II", level: 8, title: "Electives, APIs & Certification", weeks: "Weeks 37–41", status: "Completed", progress: 100 },
-  { id: "LC-09", semester: "Semester II", level: 9, title: "Full Stack Integration & Testing", weeks: "Weeks 42–46", status: "Active", progress: 72 },
-  { id: "LC-10", semester: "Semester II", level: 10, title: "Local Deploy & Semester II Evaluation", weeks: "Weeks 47–52", status: "Upcoming", progress: 0 },
-];
-
-const studentNav = ["Overview", "Work Board", "Evidence & Portfolio", "Skills & Outcomes", "Faculty Feedback", "Calendar", "Performance & Results", "Information Centre"];
-const courseHeadNav = ["Overview", "Course Details", "Programme Workflow", "Course Coordination", "Learning Cycle Planning", "Assignment Management", "Student Monitor", "Activity Review", "Academic Evaluation", "Reports & Analytics"];
-const mentorNav = ["Overview", "My Allocations", "Learners & Teams", "Sprint Workspace", "Evidence Review", "Mentoring Records", "Competency & Calibration", "Escalations", "Recommendation Tracker", "Calendar", "Course Details"];
-const academicComponents = [["Live Project Work", 84, 50], ["Product Milestones", 78, 20], ["Documentation & Process", 88, 10], ["Continuous Evaluation", 81, 10], ["Theory Examination", 76, 10]] as const;
 const sprintData = [
   { no: "01", name: "Contract", detail: "OpenAPI contract and integration boundaries", state: "Completed" },
   { no: "02", name: "Connect", detail: "Frontend, backend and authentication flow", state: "Completed" },
@@ -76,8 +67,9 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const cycle = cycles.find((item) => item.id === cycleId) ?? cycles[1];
-  const navItems = role === "student" ? studentNav : role === "courseHead" ? courseHeadNav : mentorNav;
+  const navItems = workspaceNavigation[role];
   const roleProfile = role === "student" ? { initials: "AR", name: "Anakha Rajesh", title: "Postgraduate Student" } : role === "courseHead" ? { initials: "AK", name: "Dr. Ajith Kumar", title: "Course Head" } : mentorKind === "domain" ? { initials: "AV", name: "Ajitha V S", title: "Domain Mentor · QA & Testing" } : { initials: "DM", name: "Diju M", title: "Student-Team Mentor · Code Review" };
 
   useEffect(() => {
@@ -97,6 +89,21 @@ export default function Home() {
     return () => media.removeEventListener("change", apply);
   }, [theme]);
   useEffect(() => localStorage.setItem("msdsp-cycle", cycleId), [cycleId]);
+  useEffect(() => {
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (event.key === "Escape") {
+        setProfileOpen(false);
+        setCycleOpen(false);
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyboard);
+    return () => window.removeEventListener("keydown", handleKeyboard);
+  }, []);
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const changeRole = (next: Role) => { setRole(next); setPage("Overview"); setMobileOpen(false); };
@@ -104,19 +111,19 @@ export default function Home() {
 
   return <main className="app-shell">
     <header className="topbar">
-      <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMobileOpen(!mobileOpen)}><Icon name="menu" /></button>
+      <button type="button" className="mobile-menu" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} aria-controls="primary-navigation" onClick={() => setMobileOpen(!mobileOpen)}><Icon name="menu" /></button>
       <div className="brand" aria-label="MSDSP learning portal"><span className="brand-mark">DUK</span><div><b>MSDSP</b><small>Applied Learning Portal</small></div></div>
       <div className="programme-context"><span>Master of Science</span><b>Data Science & Product Development</b></div>
-      <label className="global-search"><Icon name="search" /><input aria-label="Search portal" placeholder="Search assignments, evidence, outcomes…" /><kbd>⌘ K</kbd></label>
+      <label className="global-search"><Icon name="search" /><input ref={searchRef} type="search" aria-label="Search portal" placeholder="Search assignments, evidence, outcomes…" /><kbd aria-hidden="true">Ctrl K</kbd></label>
       <button className="top-icon" aria-label="Notifications" onClick={() => notify("Three academic updates are unread")}><Icon name="bell" /><i>3</i></button>
-      <div className="profile-wrap"><button className="profile" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)}><span>{roleProfile.initials}</span><div><b>{roleProfile.name}</b><small>{roleProfile.title}</small></div><Icon name="chevron" /></button>{profileOpen && <div className="popover profile-menu"><p>Appearance</p><div className="theme-options">{(["light", "dark", "system"] as Theme[]).map((item) => <button key={item} className={theme === item ? "selected" : ""} onClick={() => { setTheme(item); setProfileOpen(false); }}>{item}</button>)}</div><button onClick={() => notify("Profile opened")}><Icon name="user" />Profile & preferences</button></div>}</div>
+      <div className="profile-wrap"><button className="profile" aria-haspopup="menu" aria-controls="profile-menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)}><span>{roleProfile.initials}</span><div><b>{roleProfile.name}</b><small>{roleProfile.title}</small></div><Icon name="chevron" /></button>{profileOpen && <div id="profile-menu" role="menu" className="popover profile-menu"><p>Appearance</p><div className="theme-options">{(["light", "dark", "system"] as Theme[]).map((item) => <button role="menuitemradio" aria-checked={theme === item} key={item} className={theme === item ? "selected" : ""} onClick={() => { setTheme(item); setProfileOpen(false); }}>{item}</button>)}</div><button role="menuitem" onClick={() => notify("Profile opened")}><Icon name="user" />Profile & preferences</button></div>}</div>
     </header>
 
     <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
-      <div className="role-switch" aria-label="Prototype role"><button className={role === "student" ? "active" : ""} onClick={() => changeRole("student")}>Student</button><button className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")}>Course Head</button><button className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")}>Mentor</button></div>
+      <div className="role-switch" role="group" aria-label="Prototype role"><button type="button" aria-pressed={role === "student"} className={role === "student" ? "active" : ""} onClick={() => changeRole("student")}>Student</button><button type="button" aria-pressed={role === "courseHead"} className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")}>Course Head</button><button type="button" aria-pressed={role === "mentor"} className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")}>Mentor</button></div>
       {role === "mentor" && <div className="mentor-persona-switch" aria-label="Mentor responsibility"><span>MENTOR RESPONSIBILITY</span><div><button className={mentorKind === "domain" ? "active" : ""} onClick={() => { setMentorKind("domain"); setPage("Overview"); }}>Domain Mentor</button><button className={mentorKind === "team" ? "active" : ""} onClick={() => { setMentorKind("team"); setPage("Overview"); }}>Team Mentor</button></div></div>}
       <p className="nav-label">{role === "student" ? "LEARNING WORKSPACE" : role === "courseHead" ? "COURSE HEAD WORKSPACE" : "MENTOR WORKSPACE"}</p>
-      <nav>{navItems.map((item) => <button key={item} className={page === item ? "active" : ""} onClick={() => changePage(item)}><Icon name={navIcons[item] ?? "grid"} />{item}{(item === "Activity Review" || item === "Review Queue") && <em>{item === "Activity Review" ? 14 : 6}</em>}</button>)}</nav>
+      <nav id="primary-navigation" aria-label="Workspace navigation">{navItems.map((item) => <button type="button" key={item} aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => changePage(item)}><Icon name={navIcons[item] ?? "grid"} />{item}{item === "Activity Review" && <em aria-label="14 items">14</em>}</button>)}</nav>
       <div className="cycle-mini"><div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div><b>{cycle.id} · Official Level {cycle.level}</b><p>{cycle.title}</p><div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div></div>
       <div className="attendance-note"><Icon name="shield" /><div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div></div>
       <small className="prototype-label"><i /> Interactive academic prototype</small>
@@ -124,11 +131,11 @@ export default function Home() {
     {mobileOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
 
     <section className="workspace">
-      <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div className="cycle-selector-wrap"><button className="cycle-selector" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
+      <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
       <div key={`${role}-${mentorKind}-${page}-${cycleId}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={() => setEvidenceOpen(true)} notify={notify} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
     </section>
     {evidenceOpen && <EvidenceModal close={() => setEvidenceOpen(false)} save={() => { setEvidenceOpen(false); notify("Evidence saved to DS-904"); }} />}
-    {toast && <div className="toast"><Icon name="check" />{toast}</div>}
+    <div className="toast-region" aria-live="polite" aria-atomic="true">{toast && <div className="toast"><Icon name="check" />{toast}</div>}</div>
   </main>;
 }
 
@@ -191,12 +198,12 @@ function CourseDetails({ notify }: { notify: (message: string) => void }) {
   ];
 
   return <><PageHeader eyebrow="COURSE DETAILS · FACULTY REFERENCE" title="M.Sc. Data Science and Product Development" description="A faculty-only reference aligned to the current Digital University Kerala programme page and the shared Course Plan. Conflicting draft values are shown as governance decisions, not hidden assumptions." />
-    <section className="programme-hero"><div><span className="programme-kicker">TWO-YEAR · WORK-IMMERSIVE LEARNING PROGRAMME</span><h2>Academic learning mapped directly to real project work</h2><p>The programme integrates artificial intelligence, data systems, full-stack engineering, cloud, DevOps and product development. Academic credits, assessment and learning outcomes are mapped to project tasks, assignments and deliverables.</p><div className="programme-tags"><span>AI and Data Science</span><span>Full-stack systems</span><span>Cloud and MLOps</span><span>Product development</span><span>Governance and security</span></div></div><aside><span className="programme-orbit"><b>80</b><small>Total credits</small></span><div><small>CURRENT PUBLISHED STRUCTURE</small><b>2 years · 4 semesters</b><p>Continuous project-integrated learning with one project outcome in each semester.</p><a href="https://cdipd.duk.ac.in/mdspd.html" target="_blank" rel="noreferrer">Open official programme page <Icon name="arrow" /></a></div></aside></section>
+    <section className="programme-hero"><div><span className="programme-kicker">TWO-YEAR · WORK-IMMERSIVE LEARNING PROGRAMME</span><h2>Academic learning mapped directly to real project work</h2><p>The programme integrates artificial intelligence, data systems, full-stack engineering, cloud, DevOps and product development. Academic credits, assessment and learning outcomes are mapped to project tasks, assignments and deliverables.</p><div className="programme-tags"><span>AI and Data Science</span><span>Full-stack systems</span><span>Cloud and MLOps</span><span>Product development</span><span>Governance and security</span></div></div><aside><span className="programme-orbit"><b>{programmeRules.creditTotal.displayValue}</b><small>{programmeRules.creditTotal.label}</small></span><div><small>CURRENT PUBLISHED STRUCTURE</small><b>2 years · 4 semesters</b><p>Continuous project-integrated learning with one project outcome in each semester. Credit totals remain subject to Programme Board confirmation.</p><i className="decision-reference">{programmeRules.creditTotal.decisionId} · {programmeRules.creditTotal.status}</i><a href="https://cdipd.duk.ac.in/mdspd.html" target="_blank" rel="noreferrer">Open official programme page <Icon name="arrow" /></a></div></aside></section>
     <div className="programme-stats"><span><Icon name="calendar" /><div><b>2 years</b><small>Programme duration</small></div></span><span><Icon name="layers" /><div><b>4 × 20</b><small>Semesters and credits</small></div></span><span><Icon name="book" /><div><b>5</b><small>Mandatory core subjects</small></div></span><span><Icon name="award" /><div><b>17</b><small>Published elective pool</small></div></span></div>
 
     <article className="panel source-register"><div><Icon name="shield" /><span><small>CONTENT CONTROL</small><b>Official page is the current public reference</b><p>The Course Plan, dashboard FRS, gamification rubric and coordination workbook remain working documents. Portal rules derived from them are marked provisional until academic approval.</p></span></div><div><span><small>PUBLISHED ELECTIVE REQUIREMENT</small><b>12 of 17 skill areas</b><p>The shared Course Plan states 10 of 17. Programme Board confirmation is required before enforcing either value.</p></span><i>Decision pending</i></div></article>
 
-    <article className="panel semester-architecture"><PanelHeading label="SEMESTER-WISE LEARNING STRUCTURE" title="Four progressive product outcomes" meta="20 credits per semester" /><div className="semester-course-grid">{semesterPlan.map((item) => <button key={item[0]} onClick={() => notify(`Semester ${item[0]} details opened`)}><span>{item[0]}</span><div><small>SEMESTER {item[0]}</small><h3>{item[1]}</h3><p><b>Academic structure</b>{item[2]}</p><p><b>Project work</b>{item[3]}</p><p><b>Expected outcome</b>{item[4]}</p></div><Icon name="arrow" /></button>)}</div></article>
+    <article className="panel semester-architecture"><PanelHeading label="SEMESTER-WISE LEARNING STRUCTURE" title="Four progressive product outcomes" meta="Published proposal · 20 credits per semester" /><div className="semester-course-grid">{semesterPlan.map((item) => <button key={item[0]} onClick={() => notify(`Semester ${item[0]} details opened`)}><span>{item[0]}</span><div><small>SEMESTER {item[0]}</small><h3>{item[1]}</h3><p><b>Academic structure</b>{item[2]}</p><p><b>Project work</b>{item[3]}</p><p><b>Expected outcome</b>{item[4]}</p></div><Icon name="arrow" /></button>)}</div></article>
 
     <div className="course-details-grid"><section><article className="panel curriculum-panel"><PanelHeading label="MANDATORY CORE SUBJECTS" title="Five connected engineering domains" meta="Course Plan reference" /><div className="curriculum-grid">{coreCourses.map(([code, title, description], index) => <button key={code} onClick={() => notify(`${code} course details opened`)}><span className={`domain-number d${index + 1}`}>{String(index + 1).padStart(2, "0")}</span><div><small>{code}</small><h3>{title}</h3><p>{description}</p></div><Icon name="arrow" /></button>)}</div></article></section>
       <aside className="course-side-stack"><article className="panel delivery-model"><PanelHeading label="WORK-IMMERSIVE DELIVERY" title="Evidence from project activity" meta="Faculty monitored" /><div className="learning-loop">{[["01", "Plan", "Sprint work plan"], ["02", "Perform", "Project task"], ["03", "Record", "Activity and evidence"], ["04", "Review", "Mentor feedback"], ["05", "Present", "Monthly evaluation"]].map((item, index) => <span key={item[0]}><i>{item[0]}</i><p><b>{item[1]}</b><small>{item[2]}</small></p>{index < 4 && <em />}</span>)}</div></article><article className="panel academic-boundaries"><Icon name="shield" /><div><span className="eyebrow">SYSTEM BOUNDARY</span><h3>Attendance remains in DUK@360</h3><p>MSDSP records learning work and evidence. Login time, time spent, submission frequency and after-hours work are not attendance and do not determine academic performance.</p></div></article></aside></div>
@@ -350,7 +357,7 @@ function MermaidDiagram({ chart, title }: { chart: string; title: string }) {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => { cancelled = true; observer.disconnect(); };
   }, [chart, reactId]);
-  return <div className="mermaid-render" role="img" aria-label={title}>{error ? <p>{error}</p> : svg ? <div dangerouslySetInnerHTML={{ __html: svg }} /> : <span className="mermaid-loading"><i /><b>Rendering diagram…</b></span>}</div>;
+  return <div className="mermaid-render" role="img" aria-label={title}>{error ? <p role="alert">{error}</p> : svg ? <div dangerouslySetInnerHTML={{ __html: svg }} /> : <span className="mermaid-loading" role="status"><i /><b>Rendering diagram…</b></span>}</div>;
 }
 
 function MermaidGallery({ notify }: { notify: (message: string) => void }) {
@@ -544,7 +551,8 @@ function MentorLifecycle({ notify }: { notify: (message: string) => void }) {
 function MentorLearners({ cycle, mentorKind, notify }: { cycle: Cycle; mentorKind: MentorKind; notify: (message: string) => void }) {
   const allocation = mentorAllocation(cycle, mentorKind);
   if (!allocation.active) return <><PageHeader eyebrow={`MENTOR ALLOCATION · ${cycle.id}`} title="Learners and teams" description="Only learners connected to a formal allocation or specialist referral are displayed." /><MentorNoAllocation cycle={cycle} notify={notify} /></>;
-  const learners = [["Alfin", "Individual", "DS-905 contract review", "OpenAPI evidence", 62, "Support needed"], ["Anakha Rajesh", "Team Northstar", "DS-907 revision", "Playwright traces", 84, "Revision"], ["Annamma", "Team Orion", "DS-904 integration", "Demo readiness", 91, "On track"], ["Annrosna", "Team Vector", "DS-904 integration", "Rollback evidence", 70, "Watch"], ["Dhanush Girish", "Team allocation pending", "Mentor onboarding", "Initial evidence review", 0, "Allocation pending"]];
+  const learnerDetails: Array<[string, string, string, number, string]> = [["Individual", "DS-905 contract review", "OpenAPI evidence", 62, "Support needed"], ["Team Northstar", "DS-907 revision", "Playwright traces", 84, "Revision"], ["Team Orion", "DS-904 integration", "Demo readiness", 91, "On track"], ["Team Vector", "DS-904 integration", "Rollback evidence", 70, "Watch"], ["Team allocation pending", "Mentor onboarding", "Initial evidence review", 0, "Allocation pending"]];
+  const learners: Array<[string, string, string, string, number, string]> = prototypeCohort.map((name, index) => [name, ...learnerDetails[index]]);
   return <><PageHeader eyebrow={`MENTOR ALLOCATION · ${cycle.id}`} title="Assigned learners and product teams" description={mentorKind === "domain" ? "View learners whose QA evidence requires specialist review. Continuous team ownership remains with the Student-Team Mentor." : "Maintain continuous learner support, team actions and specialist referrals using evidence—not attendance or online activity."} action="Record mentor note" onAction={() => notify("Structured mentoring record opened")} /><article className="panel allocation-summary"><div><span className="eyebrow">ACTIVE ALLOCATION</span><h2>Level {cycle.level} · {cycle.title}</h2><p>{allocation.scope}</p></div><dl><div><dt>Accepted</dt><dd>4 learners</dd></div><div><dt>Pending allocation</dt><dd>1 learner</dd></div><div><dt>Responsibility</dt><dd>{mentorKind === "domain" ? "Specialist evidence review" : "Continuous team mentoring"}</dd></div><div><dt>Escalation owner</dt><dd>{allocation.coordinator}</dd></div></dl></article><FilterBar placeholder="Search assigned learner or team" /><div className="mentor-learner-grid">{learners.map((item) => <article className="panel mentor-learner" key={item[0]}><header><span className="avatar">{item[0].split(" ").map((part) => part[0]).slice(0, 2).join("")}</span><i className={`status ${item[5].toLowerCase().replaceAll(" ", "-")}`}>{item[5]}</i></header><h3>{item[0]}</h3><p>{item[1]}</p><dl><div><dt>Current work</dt><dd>{item[2]}</dd></div><div><dt>{mentorKind === "domain" ? "Review scope" : "Mentor focus"}</dt><dd>{item[3]}</dd></div><div><dt>Evidence ready</dt><dd>{item[4]}%</dd></div></dl><div className="mini-progress"><i style={{ width: `${item[4]}%` }} /></div><button onClick={() => notify(`${item[0]} mentoring record opened`)}>Open mentoring record <Icon name="arrow" /></button></article>)}</div></>;
 }
 
@@ -654,10 +662,6 @@ function AnalyticsPage() {
 
 function FilterBar({ placeholder }: { placeholder: string }) { return <div className="filter-bar"><label><Icon name="search" /><input placeholder={placeholder} /></label><select aria-label="Filter by status"><option>All statuses</option><option>In progress</option><option>Under review</option></select><select aria-label="Filter by course"><option>All courses</option><option>CS102</option><option>CS103</option><option>CS104</option><option>CS105</option></select></div>; }
 function ScoreRow({ label, value, width, purple }: { label: string; value: string; width: string; purple?: boolean }) { return <div className={`score-row ${purple ? "purple" : ""}`}><span>{label}<b>{value}</b></span><div><i style={{ width }} /></div></div>; }
-
-function EvidenceModal({ close, save }: { close: () => void; save: () => void }) {
-  return <div className="modal-backdrop" onMouseDown={close}><form className="evidence-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); save(); }}><button type="button" className="modal-close" aria-label="Close" onClick={close}>×</button><span className="eyebrow">RECORD LEARNING EVIDENCE</span><h2>Connect engineering work to an academic claim</h2><p>Describe what the artifact proves, how it was verified and which outcome it supports. This records learning work—not attendance or time spent.</p><label>Related assignment<select><option>DS-904 · Full-stack integration and test readiness</option><option>DS-905 · API contract and PostgreSQL integration</option><option>DS-907 · End-to-end quality-gate revision</option></select></label><label>Evidence category<select><option>Code or pull request</option><option>API or data contract</option><option>Automated test report</option><option>Technical documentation</option><option>Critical reflection</option></select></label><label>Academic claim<textarea required placeholder="Explain the decision, implementation, verification result or professional competency this evidence demonstrates…" /></label><label className="upload-box"><input type="file" /><Icon name="upload" /><b>Select evidence file</b><small>Prototype only · PDF, source archive, test report, specification or document</small></label><div className="button-row"><button type="button" onClick={close}>Cancel</button><button className="primary-button" type="submit">Save evidence</button></div></form></div>;
-}
 
 function PageHeader({ eyebrow, title, description, action, onAction }: { eyebrow: string; title: string; description: string; action?: string; onAction?: () => void }) { return <div className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{action && <button className="primary-button" onClick={onAction}>{action}<Icon name="arrow" /></button>}</div>; }
 function Metric({ icon, label, value, meta, trend, tone }: { icon: string; label: string; value: string; meta: string; trend: string; tone: string }) { return <article className={`metric-card ${tone}`}><div className="metric-top"><span><Icon name={icon} /></span><small>{trend}</small></div><p>{label}</p><b>{value}</b><small>{meta}</small></article>; }

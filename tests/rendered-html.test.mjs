@@ -114,3 +114,39 @@ test("documents the Course Head programme operating model", async () => {
   assert.match(source, /Evidence-led mentoring loop/);
   assert.match(source, /Academic and progression separation/);
 });
+
+test("keeps core navigation and evidence dialog accessible", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const dialog = await readFile(new URL("../app/components/evidence-modal.tsx", import.meta.url), "utf8");
+  for (const contract of [
+    'aria-controls="primary-navigation"',
+    'aria-label="Workspace navigation"',
+    'aria-current={page === item ? "page" : undefined}',
+    'aria-live="polite"',
+  ]) {
+    assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  for (const contract of ['role="dialog"', 'aria-modal="true"', 'event.key === "Escape"', 'event.key !== "Tab"', "minLength={30}"]) {
+    assert.match(dialog, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+});
+
+test("labels unresolved programme rules as provisional configuration", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const config = await readFile(new URL("../app/portal-config.ts", import.meta.url), "utf8");
+  assert.match(source, /Credit totals remain subject to Programme Board confirmation/);
+  assert.match(source, /programmeRules\.creditTotal\.decisionId/);
+  assert.doesNotMatch(source, /<small>Total credits<\/small>/);
+  for (const decision of ["PR-004", "PR-005", "PR-006", "PR-007"]) {
+    assert.match(config, new RegExp(decision));
+  }
+});
+
+test("keeps workspace information architecture in governed configuration", async () => {
+  const config = await readFile(new URL("../app/portal-config.ts", import.meta.url), "utf8");
+  assert.match(config, /student:[\s\S]*"Information Centre"/);
+  assert.doesNotMatch(config, /student:[^\n]*"Course Details"/);
+  assert.match(config, /courseHead:[^\n]*"Course Details"/);
+  assert.match(config, /mentor:[^\n]*"Course Details"/);
+  assert.match(config, /prototypeCohort/);
+});
