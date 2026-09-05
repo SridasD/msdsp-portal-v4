@@ -1,52 +1,54 @@
 :root {
-  --bg: #f4f6fa;
+  --bg: #f3f5f4;
   --surface: #ffffff;
-  --surface-2: #f8f9fc;
-  --surface-3: #eef1f7;
-  --nav: #11182c;
-  --nav-2: #18213a;
-  --text: #172033;
-  --muted: #667085;
-  --subtle: #8b95a8;
-  --line: #e3e7ef;
-  --line-strong: #d6dce7;
-  --indigo: #4056d8;
-  --indigo-dark: #293aa9;
-  --cyan: #0f8a91;
-  --violet: #7a4fc7;
-  --gold: #b7791f;
-  --green: #16835f;
-  --red: #c24155;
-  --amber: #c17817;
+  --surface-2: #f7f9f8;
+  --surface-3: #e9efed;
+  --nav: #ffffff;
+  --nav-2: #eef4f2;
+  --text: #162522;
+  --muted: #5e6f6b;
+  --subtle: #788984;
+  --line: #dce4e1;
+  --line-strong: #c7d3cf;
+  --indigo: #176b67;
+  --indigo-dark: #0d504d;
+  --cyan: #087f8c;
+  --violet: #6c5987;
+  --gold: #9b6b17;
+  --green: #19724f;
+  --red: #b74652;
+  --amber: #a85f17;
+  --accent-warm: #d75b42;
   --radius-control: 8px;
   --radius-surface: 8px;
   --focus-ring: 0 0 0 3px color-mix(in srgb, var(--indigo) 30%, transparent);
-  --shadow: 0 16px 42px rgba(25, 36, 68, .08);
-  --shadow-soft: 0 5px 18px rgba(25, 36, 68, .05);
+  --shadow: 0 16px 38px rgba(24, 52, 45, .1);
+  --shadow-soft: 0 2px 8px rgba(24, 52, 45, .055);
 }
 
 [data-theme="dark"] {
-  --bg: #0d1220;
-  --surface: #151c2d;
-  --surface-2: #1a2235;
-  --surface-3: #222c42;
-  --nav: #090d18;
-  --nav-2: #11182a;
+  --bg: #111816;
+  --surface: #18221f;
+  --surface-2: #1d2925;
+  --surface-3: #263530;
+  --nav: #151e1b;
+  --nav-2: #202e29;
   --text: #eef2fa;
   --muted: #a5afc1;
   --subtle: #7f899d;
   --line: #29344a;
   --line-strong: #37435a;
-  --indigo: #7f91ff;
-  --indigo-dark: #a6b1ff;
-  --cyan: #42c5c8;
+  --indigo: #63c5bb;
+  --indigo-dark: #8ad8cf;
+  --cyan: #58c4d0;
   --violet: #b790f2;
   --gold: #e6b965;
   --green: #52c596;
   --red: #ef7d91;
   --amber: #e3ad59;
-  --shadow: 0 18px 55px rgba(0, 0, 0, .28);
-  --shadow-soft: 0 6px 20px rgba(0, 0, 0, .18);
+  --accent-warm: #ef826b;
+  --shadow: 0 16px 44px rgba(0, 0, 0, .24);
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, .16);
 }
 
 * { box-sizing: border-box; }
@@ -1549,6 +1551,57 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 @keyframes mermaid-status { 70% { box-shadow: 0 0 0 7px rgba(50,150,95,0); } 100% { box-shadow: 0 0 0 0 rgba(50,150,95,0); } }
 @keyframes mermaid-decision { 50% { filter: drop-shadow(0 0 6px rgba(123,91,196,.34)); } }
 @keyframes mermaid-evidence { 50% { filter: drop-shadow(0 0 5px rgba(50,150,95,.24)); } }
+
+/* 2026 visual refresh: quiet academic operations surface. */
+.topbar { height: 68px; gap: 18px; border-top: 4px solid var(--accent-warm); padding: 0 22px; backdrop-filter: none; }
+.brand { width: 218px; }
+.brand-mark { width: 40px; height: 40px; border-radius: 6px; background: var(--indigo-dark); box-shadow: none; }
+.programme-context { min-width: 280px; }
+.global-search { height: 40px; border-radius: 6px; background: var(--surface); }
+.top-icon, .mobile-menu, .profile > span, .avatar { border-radius: 6px; }
+.sidebar { top: 68px; width: 248px; padding: 18px 12px 16px; border-right: 1px solid var(--line); background: var(--nav); color: var(--text); }
+.role-switch { border-color: var(--line); border-radius: 6px; background: var(--nav-2); }
+.role-switch button { border-radius: 4px; color: var(--muted); }
+.role-switch button.active { color: #fff; background: var(--indigo); box-shadow: none; }
+.mentor-persona-switch { border-color: var(--line); border-radius: 6px; background: var(--surface-2); }
+.mentor-persona-switch > span, .nav-label { color: var(--subtle); }
+.mentor-persona-switch button { color: var(--muted); }
+.mentor-persona-switch button.active { border-color: var(--indigo); color: var(--indigo); background: color-mix(in srgb, var(--indigo) 9%, var(--surface)); }
+.sidebar nav { gap: 2px; }
+.sidebar nav button { min-height: 40px; border-radius: 5px; padding: 0 10px; color: var(--muted); }
+.sidebar nav button:hover { color: var(--text); background: var(--surface-2); transform: none; }
+.sidebar nav button.active { color: var(--indigo-dark); background: color-mix(in srgb, var(--indigo) 10%, var(--surface)); box-shadow: inset 3px 0 var(--indigo); }
+.sidebar nav em { border-radius: 4px; background: var(--accent-warm); }
+.cycle-mini { border-color: var(--line); border-radius: 6px; background: var(--surface-2); }
+.cycle-mini > div:first-child, .cycle-mini p { color: var(--muted); }
+.cycle-mini > b { color: var(--text); }
+.attendance-note { border-radius: 6px; }
+.attendance-note b { color: var(--text); }
+.attendance-note p { color: var(--muted); }
+.prototype-label { color: var(--subtle); }
+.workspace { margin-left: 248px; padding: 88px clamp(24px, 3.2vw, 52px) 54px; }
+.workspace-bar { min-height: 48px; margin-bottom: 22px; }
+.cycle-selector { min-height: 48px; border-radius: 6px; box-shadow: none; }
+.cycle-code { height: 36px; border-radius: 4px; }
+.page-header { align-items: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.page-header h1 { font-size: clamp(27px, 2.6vw, 34px); letter-spacing: 0; }
+.page-header p { font-size: 14px; }
+.eyebrow { letter-spacing: .08em; }
+.primary-button { border-radius: 5px; background: var(--indigo); box-shadow: none; }
+.primary-button:hover { transform: none; background: var(--indigo-dark); box-shadow: none; }
+.panel, .metric-card { border-radius: 6px; box-shadow: var(--shadow-soft); }
+.metric-card { min-height: 142px; border-top: 3px solid var(--tone); }
+.metric-card:hover { transform: none; }
+.metric-card::after, .academic-brief::after, .game-command::after, .coordination-hero::after { display: none; }
+.next-action-card { border-left: 4px solid var(--accent-warm); border-radius: 6px; background: var(--surface); }
+.next-action-icon { border-radius: 5px; background: var(--accent-warm); }
+.next-action-card > button { border-radius: 5px; background: var(--indigo); }
+.next-action-card small { border-radius: 4px; }
+.game-command, .mentor-command { border-radius: 6px; background: #173f3d; box-shadow: var(--shadow); }
+.academic-brief, .faculty-brief, .coordination-hero { border-radius: 6px; background: #203a4a; box-shadow: var(--shadow); }
+.game-status, .brief-tags span { border-radius: 4px; }
+.game-score, .mentor-command aside, .coordination-hero aside, .level-visual { border-radius: 5px; backdrop-filter: none; }
+.status { border-radius: 4px; }
 
 @media (max-width: 1240px) {
   .programme-context { display: none; }
