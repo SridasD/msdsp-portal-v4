@@ -42,14 +42,16 @@ test("validates evidence and restores focus when dismissed", async ({ page }) =>
   await expect(trigger).toBeFocused();
 });
 
-test("has no serious structural accessibility violations", async ({ page }) => {
+test("has no serious accessibility violations", async ({ page }) => {
   await openPortal(page);
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .disableRules(["color-contrast"])
     .analyze();
 
-  expect(results.violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
+  const serious = results.violations
+    .filter(({ impact }) => impact === "serious" || impact === "critical")
+    .map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target.join(" ")) }));
+  expect(serious).toEqual([]);
 });
 
 test("opens and closes mobile workspace navigation", async ({ page }, testInfo) => {
@@ -61,4 +63,37 @@ test("opens and closes mobile workspace navigation", async ({ page }, testInfo) 
   await expect(page.getByRole("button", { name: "Close navigation" }).first()).toHaveAttribute("aria-expanded", "true");
   await page.getByRole("button", { name: "Work Board" }).click();
   await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+});
+
+test("supports switching between v2 focused dashboard and classic overview", async ({ page }) => {
+  await openPortal(page);
+
+  // By default on browser hydration, v2 focused dashboard is active
+  await expect(page.getByText("TEAM NORTHSTAR · COHORT COLLABORATION")).toBeVisible();
+  await expect(page.getByText("Resolve the two failing end-to-end scenarios (DS-907)")).toBeVisible();
+
+  // Switch to Classic
+  await page.getByRole("button", { name: "Classic Overview" }).click();
+  await expect(page.getByText("LEVEL 9 QUESTS")).toBeVisible();
+  await expect(page.getByText("EXPERIENTIAL LEARNING SCAFFOLD")).toBeVisible();
+
+  // Switch back to Focused (v2)
+  await page.getByRole("button", { name: "Focused (v2)" }).click();
+  await expect(page.getByText("TEAM NORTHSTAR · COHORT COLLABORATION")).toBeVisible();
+});
+
+test("opens evidence modal pre-selected to DS-907 from urgent revision hero", async ({ page }) => {
+  await openPortal(page);
+
+  const heroCta = page.getByRole("button", { name: "Attach corrected test trace" });
+  await heroCta.click();
+
+  const dialog = page.getByRole("dialog", { name: "Connect engineering work to an academic claim" });
+  await expect(dialog).toBeVisible();
+
+  const select = page.getByRole("combobox", { name: "Related assignment" });
+  await expect(select).toHaveValue("DS-907 · End-to-end quality-gate revision");
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
 });

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { EvidenceModal } from "./components/evidence-modal";
 import { FilterBar, Icon, Metric, PageHeader, PanelHeading, ScoreRow } from "./components/portal-primitives";
+import { StudentDashboardV2 } from "./components/student-dashboard-v2";
 import { coordinators, levelCoordination, semesterCoordination } from "./coordination-data";
 import { academicComponents, cycles, levelNinePoints, programmeRules, prototypeCohort, sprintData, workspaceIcons, workspaceNavigation, type Cycle, type MentorKind, type Role, type Theme } from "./portal-config";
 
@@ -16,6 +17,8 @@ export default function Portal() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceAssignment, setEvidenceAssignment] = useState<string | undefined>();
+  const [studentDashboardMode, setStudentDashboardMode] = useState<"v2" | "classic">("classic");
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const appShellRef = useRef<HTMLElement>(null);
@@ -31,8 +34,14 @@ export default function Portal() {
     const restore = window.setTimeout(() => {
       const storedTheme = localStorage.getItem("msdsp-theme") as Theme | null;
       const storedCycle = localStorage.getItem("msdsp-cycle");
+      const storedMode = localStorage.getItem("msdsp-student-dashboard-mode") as "v2" | "classic" | null;
       if (storedTheme) setTheme(storedTheme);
       if (storedCycle && cycles.some((item) => item.id === storedCycle)) setCycleId(storedCycle);
+      if (storedMode) {
+        setStudentDashboardMode(storedMode);
+      } else {
+        setStudentDashboardMode("v2");
+      }
     }, 0);
     return () => window.clearTimeout(restore);
   }, []);
@@ -73,6 +82,12 @@ export default function Portal() {
   const focusWorkspace = () => window.requestAnimationFrame(() => workspaceRef.current?.focus());
   const changeRole = (next: Role) => { setRole(next); setPage("Overview"); setMobileOpen(false); focusWorkspace(); };
   const changePage = (next: string) => { setPage(next); setMobileOpen(false); focusWorkspace(); };
+  const handleOpenEvidence = (assignment?: string) => { setEvidenceAssignment(assignment); setEvidenceOpen(true); };
+  const handleDashboardModeChange = (mode: "v2" | "classic") => {
+    setStudentDashboardMode(mode);
+    localStorage.setItem("msdsp-student-dashboard-mode", mode);
+    notify(mode === "v2" ? "Focused Dashboard (v2) activated" : "Classic Overview activated");
+  };
 
   return <main ref={appShellRef} className="app-shell" data-hydrated="false">
     <a className="skip-link" href="#workspace" onClick={focusWorkspace}>Skip to workspace</a>
@@ -98,22 +113,47 @@ export default function Portal() {
 
     <section ref={workspaceRef} id="workspace" tabIndex={-1} aria-label={`${role === "courseHead" ? "Course Head" : role === "mentor" ? "Mentor" : "Student"} workspace: ${page}`} className="workspace">
       <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div ref={cycleMenuRef} className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
-      <div key={`${role}-${mentorKind}-${page}-${cycleId}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={() => setEvidenceOpen(true)} notify={notify} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
+      <div key={`${role}-${mentorKind}-${page}-${cycleId}-${studentDashboardMode}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={handleOpenEvidence} notify={notify} dashboardMode={studentDashboardMode} setDashboardMode={handleDashboardModeChange} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
     </section>
-    {evidenceOpen && <EvidenceModal close={() => setEvidenceOpen(false)} save={() => { setEvidenceOpen(false); notify("Evidence saved to DS-904"); }} />}
+    {evidenceOpen && <EvidenceModal defaultAssignment={evidenceAssignment} close={() => { setEvidenceOpen(false); setEvidenceAssignment(undefined); }} save={() => { setEvidenceOpen(false); notify(`Evidence saved to ${evidenceAssignment ?? "DS-904"}`); setEvidenceAssignment(undefined); }} />}
     <div className="toast-region" aria-live="polite" aria-atomic="true">{toast && <div className="toast"><Icon name="check" />{toast}</div>}</div>
   </main>;
 }
 
-function StudentWorkspace({ page, cycle, openEvidence, notify }: { page: string; cycle: Cycle; openEvidence: () => void; notify: (message: string) => void }) {
-  if (page === "Work Board") return <Workboard openEvidence={openEvidence} notify={notify} />;
-  if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={openEvidence} notify={notify} />;
+function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void }) {
+  if (page === "Work Board") return <Workboard openEvidence={() => openEvidence()} notify={notify} />;
+  if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} />;
   if (page === "Skills & Outcomes") return <OutcomesPage />;
   if (page === "Faculty Feedback") return <FeedbackPage notify={notify} />;
   if (page === "Calendar") return <StudentCalendar notify={notify} />;
   if (page === "Performance & Results") return <PerformancePage />;
   if (page === "Information Centre") return <StudentInformationCentre notify={notify} />;
-  return <StudentOverview cycle={cycle} openEvidence={openEvidence} notify={notify} />;
+  if (dashboardMode === "v2") {
+    return <StudentDashboardV2 cycle={cycle} openEvidence={openEvidence} notify={notify} onSwitchToClassic={() => setDashboardMode("classic")} />;
+  }
+  return <StudentOverviewWithToggle cycle={cycle} openEvidence={() => openEvidence()} notify={notify} onSwitchToV2={() => setDashboardMode("v2")} />;
+}
+
+function StudentOverviewWithToggle({ cycle, openEvidence, notify, onSwitchToV2 }: { cycle: Cycle; openEvidence: () => void; notify: (message: string) => void; onSwitchToV2: () => void }) {
+  return (
+    <>
+      <div className="v2-top-controls classic-banner">
+        <div className="v2-mode-selector" role="group" aria-label="Dashboard presentation style">
+          <span className="v2-mode-label">DASHBOARD VIEW:</span>
+          <button type="button" className="v2-mode-pill" aria-pressed="false" onClick={onSwitchToV2}>
+            <Icon name="target" /> Focused (v2)
+          </button>
+          <button type="button" className="v2-mode-pill active" aria-pressed="true">
+            <Icon name="grid" /> Classic Overview
+          </button>
+        </div>
+        <button type="button" className="v2-switch-btn" onClick={onSwitchToV2}>
+          Switch to Focused Dashboard (v2) →
+        </button>
+      </div>
+      <StudentOverview cycle={cycle} openEvidence={openEvidence} notify={notify} />
+    </>
+  );
 }
 
 function StudentOverview({ cycle, openEvidence, notify }: { cycle: Cycle; openEvidence: () => void; notify: (message: string) => void }) {
