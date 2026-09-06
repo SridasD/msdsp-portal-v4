@@ -157,12 +157,19 @@ test("demystifies Work Board connection to Dashboard and supports cross-navigati
   await expect(heroWbBtn).toBeVisible();
   await heroWbBtn.click();
 
-  // 3. Verify landing on Work Board with the new student onboarding card
+  // 3. Verify landing on Work Board with DS-907 dynamically selected
   await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
   await expect(page.getByText("NEW STUDENT REFERENCE · WORK BOARD WORKFLOW")).toBeVisible();
   await expect(page.getByText("Your Engineering Execution Workbench")).toBeVisible();
   await expect(page.getByText("1. Read Brief")).toBeVisible();
   await expect(page.getByText("4. Submit for Review")).toBeVisible();
+  await expect(page.getByText("SELECTED ASSIGNMENT · DS-907")).toBeVisible();
+  await expect(page.getByText("Can you stabilize the failing E2E quality gates under concurrent load?")).toBeVisible();
+
+  // Dynamically switch to DS-904 via table click
+  await page.getByRole("button", { name: /DS-904 · Full-stack integration and test readiness/ }).click();
+  await expect(page.getByText("SELECTED ASSIGNMENT · DS-904")).toBeVisible();
+  await expect(page.getByText("Can the integrated product withstand a professional live demonstration?")).toBeVisible();
 
   // 4. Return to Dashboard Overview via the back button
   const returnBtn = page.getByRole("button", { name: "Return to Dashboard Overview" });

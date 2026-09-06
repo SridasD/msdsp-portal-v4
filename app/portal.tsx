@@ -20,6 +20,7 @@ export default function Portal() {
   const [evidenceAssignment, setEvidenceAssignment] = useState<string | undefined>();
   const [studentDashboardMode, setStudentDashboardMode] = useState<"v2" | "classic">("classic");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("DS-907");
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const appShellRef = useRef<HTMLElement>(null);
@@ -84,7 +85,12 @@ export default function Portal() {
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const focusWorkspace = () => window.requestAnimationFrame(() => workspaceRef.current?.focus());
   const changeRole = (next: Role) => { setRole(next); setPage("Overview"); setMobileOpen(false); focusWorkspace(); };
-  const changePage = (next: string) => { setPage(next); setMobileOpen(false); focusWorkspace(); };
+  const changePage = (next: string, assignmentId?: string) => {
+    setPage(next);
+    if (assignmentId) setSelectedAssignmentId(assignmentId);
+    setMobileOpen(false);
+    focusWorkspace();
+  };
   const handleOpenEvidence = (assignment?: string) => { setEvidenceAssignment(assignment); setEvidenceOpen(true); };
   const handleDashboardModeChange = (mode: "v2" | "classic") => {
     setStudentDashboardMode(mode);
@@ -172,15 +178,15 @@ export default function Portal() {
 
     <section ref={workspaceRef} id="workspace" tabIndex={-1} aria-label={`${role === "courseHead" ? "Course Head" : role === "mentor" ? "Mentor" : "Student"} workspace: ${page}`} className="workspace">
       <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div ref={cycleMenuRef} className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
-      <div key={`${role}-${mentorKind}-${page}-${cycleId}-${studentDashboardMode}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={handleOpenEvidence} notify={notify} dashboardMode={studentDashboardMode} setDashboardMode={handleDashboardModeChange} onNavigate={changePage} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
+      <div key={`${role}-${mentorKind}-${page}-${cycleId}-${studentDashboardMode}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={handleOpenEvidence} notify={notify} dashboardMode={studentDashboardMode} setDashboardMode={handleDashboardModeChange} onNavigate={changePage} selectedAssignmentId={selectedAssignmentId} setSelectedAssignmentId={setSelectedAssignmentId} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
     </section>
     {evidenceOpen && <EvidenceModal defaultAssignment={evidenceAssignment} close={() => { setEvidenceOpen(false); setEvidenceAssignment(undefined); }} save={() => { setEvidenceOpen(false); notify(`Evidence saved to ${evidenceAssignment ?? "DS-904"}`); setEvidenceAssignment(undefined); }} />}
     <div className="toast-region" aria-live="polite" aria-atomic="true">{toast && <div className="toast"><Icon name="check" />{toast}</div>}</div>
   </main>;
 }
 
-function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode, onNavigate }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void; onNavigate: (page: string) => void }) {
-  if (page === "Work Board") return <Workboard openEvidence={() => openEvidence()} notify={notify} onNavigate={onNavigate} />;
+function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode, onNavigate, selectedAssignmentId, setSelectedAssignmentId }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void; onNavigate: (page: string, assignmentId?: string) => void; selectedAssignmentId: string; setSelectedAssignmentId: (id: string) => void }) {
+  if (page === "Work Board") return <Workboard openEvidence={() => openEvidence(selectedAssignmentId)} notify={notify} onNavigate={onNavigate} selectedAssignmentId={selectedAssignmentId} onSelectAssignment={setSelectedAssignmentId} />;
   if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} />;
   if (page === "Skills & Outcomes") return <OutcomesPage />;
   if (page === "Faculty Feedback") return <FeedbackPage notify={notify} />;
@@ -497,10 +503,213 @@ function CourseCoordination({ notify }: { notify: (message: string) => void }) {
   </>;
 }
 
-function Workboard({ openEvidence, notify, onNavigate }: { openEvidence: () => void; notify: (message: string) => void; onNavigate?: (page: string) => void }) {
+interface WorkboardAssignment {
+  id: string;
+  title: string;
+  role: string;
+  reviewer: string;
+  workflow: string;
+  evidenceCount: string;
+  reviewDate: string;
+  question: string;
+  summary: string;
+  cognitive: string;
+  stage: string;
+  requiredEvidence: string;
+  briefTitle: string;
+  briefDesc: string;
+  dependencies: string;
+  outcomes: string;
+  criteria: Array<[string, string]>;
+  artifacts: Array<[string, string]>;
+  history: Array<[string, string, string]>;
+}
+
+const WORKBOARD_ASSIGNMENTS: Record<string, WorkboardAssignment> = {
+  "DS-907": {
+    id: "DS-907",
+    title: "End-to-end quality-gate revision",
+    role: "Quality Engineer",
+    reviewer: "Ajitha V S",
+    workflow: "Revision required",
+    evidenceCount: "4 / 6",
+    reviewDate: "05 Sep (Urgent) · 20 Sep (Final)",
+    question: "Can you stabilize the failing E2E quality gates under concurrent load?",
+    summary: "Resolve token refresh and transaction rollback failures in Playwright, update the operational runbook, and attach verifiable execution traces.",
+    cognitive: "Analyze → Evaluate → Create",
+    stage: "Active experimentation",
+    requiredEvidence: "Playwright failure trace · corrected test script · updated runbook · PR review",
+    briefTitle: "Repair and defend automated quality-gate resilience",
+    briefDesc: "Ajitha V S identified two unstable test scenarios during Sprint 04 quality gate review: token refresh timeout under Firefox and non-idempotent rollback. Rerun full traces with video recording and link to the revised pull request.",
+    dependencies: "Docker Compose test environment · DUK@360 mock token service · Playwright v1.45",
+    outcomes: "PO4 (DevOps & Testing) · PSO4 (Secure & Quality Systems)",
+    criteria: [
+      ["Needs revision", "Workflow is unreliable, failure traces are incomplete or setup cannot be reproduced locally."],
+      ["Meets industry standard", "Token refresh and transaction rollback pass reliably in CI; traces and root-cause notes are attached."],
+      ["Exceeds expectations", "Automated retry policy, network throttling assertions and concurrency stress harness verified with zero regressions."]
+    ],
+    artifacts: [
+      ["Playwright E2E failure trace (v2)", "Revision required"],
+      ["Corrected Playwright script (PR-45)", "Under review"],
+      ["Token refresh idempotency test suite", "Draft"],
+      ["Transaction rollback verification report", "Draft"],
+      ["Local deployment runbook (v1.2)", "Accepted"]
+    ],
+    history: [
+      ["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios in Firefox and rollback paths."],
+      ["02 Sep · 14:15", "Quality gate evaluation", "QA coordinator review conducted on initial Sprint 04 pull request."],
+      ["01 Sep · 09:30", "Submission created", "Playwright report attached from Sprint 04 automated run."]
+    ]
+  },
+  "DS-904": {
+    id: "DS-904",
+    title: "Full-stack integration and test readiness",
+    role: "Full-Stack Engineer",
+    reviewer: "Krishnasree K",
+    workflow: "Faculty review",
+    evidenceCount: "5 / 7",
+    reviewDate: "14 September",
+    question: "Can the integrated product withstand a professional live demonstration?",
+    summary: "Connect the responsive client, versioned API and PostgreSQL data layer; prove priority workflows, failure handling, role boundaries and reproducible local operation.",
+    cognitive: "Analyze → Evaluate → Create",
+    stage: "Active experimentation",
+    requiredEvidence: "OpenAPI · PR · migrations · E2E report · runbook",
+    briefTitle: "Build and defend a reliable full-stack product slice",
+    briefDesc: "Deliver the authenticated project-submission journey across the Next.js client, versioned services and PostgreSQL. The solution must reproduce locally and demonstrate expected and failure paths.",
+    dependencies: "Approved API contract · mock identity adapter · PostgreSQL 16",
+    outcomes: "PO2 · PO3 · PO4 · PO8",
+    criteria: [
+      ["Needs revision", "Workflow is unreliable, evidence is incomplete or setup cannot be reproduced."],
+      ["Meets industry standard", "Priority and failure paths are verified, traceable and independently reproducible."],
+      ["Exceeds expectations", "Secure boundaries, observability and resilient recovery are justified with evidence."]
+    ],
+    artifacts: [
+      ["OpenAPI 3.1 contract", "Accepted"],
+      ["PR-42 · integration implementation", "Accepted"],
+      ["PostgreSQL migration set", "Under review"],
+      ["Playwright E2E trace", "Revision required"],
+      ["Local deployment runbook", "Accepted"]
+    ],
+    history: [
+      ["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios."],
+      ["01 Sep · 11:20", "Evidence reviewed", "OpenAPI contract and integration pull request accepted."],
+      ["30 Aug · 18:05", "Submission created", "Five professional artifacts linked to DS-904."]
+    ]
+  },
+  "DS-905": {
+    id: "DS-905",
+    title: "API contract and PostgreSQL integration",
+    role: "Backend Engineer",
+    reviewer: "Soorya S Kumar",
+    workflow: "Under review",
+    evidenceCount: "6 / 6",
+    reviewDate: "15 September",
+    question: "Are API contracts hardened with schema validation, transactions, and error contracts?",
+    summary: "Establish strict OpenAPI 3.1 specifications, idempotent database migrations, transaction rollback semantics, and structured HTTP error responses.",
+    cognitive: "Analyze → Evaluate → Create",
+    stage: "Concrete experience",
+    requiredEvidence: "OpenAPI 3.1 spec · Prisma/Drizzle migrations · Postman contract tests · DB seed script",
+    briefTitle: "Harden backend contracts and data integrity",
+    briefDesc: "Design and document all student and evaluation endpoints with versioning, pagination, and error schemas. Verify relational consistency in PostgreSQL.",
+    dependencies: "PostgreSQL 16 container · DUK@360 identity claims specification",
+    outcomes: "PO3 (Data Systems) · PSO1 (AI-Ready Systems)",
+    criteria: [
+      ["Needs revision", "Endpoints lack schema validation, unhandled exceptions leak stack traces, or migrations are not reversible."],
+      ["Meets industry standard", "All endpoints adhere strictly to OpenAPI 3.1 with standardized error responses and automated migration rollback."],
+      ["Exceeds expectations", "Database connection pooling, query indexing benchmarks, and audit trail tables implemented."]
+    ],
+    artifacts: [
+      ["OpenAPI 3.1 specification (v1.2)", "Accepted"],
+      ["Database migration script set", "Under review"],
+      ["Postman contract test collection", "Accepted"],
+      ["PostgreSQL transaction test harness", "Under review"],
+      ["Schema architecture decision record", "Accepted"]
+    ],
+    history: [
+      ["03 Sep · 10:15", "Contract submitted", "Soorya S Kumar commenced review of PostgreSQL migrations."],
+      ["01 Sep · 16:00", "Artifacts updated", "Added negative assertion tests to Postman collection."],
+      ["28 Aug · 12:30", "Submission created", "OpenAPI spec and migration scripts uploaded."]
+    ]
+  },
+  "DS-906": {
+    id: "DS-906",
+    title: "AWS SAA-C03 certification evidence",
+    role: "Cloud Associate",
+    reviewer: "Arun Nadh G",
+    workflow: "Verification pending",
+    evidenceCount: "2 / 3",
+    reviewDate: "18 September",
+    question: "Has professional cloud architectural competency been verified via external certification?",
+    summary: "Provide verifiable score reports and Credly badge validation for AWS Certified Solutions Architect - Associate (SAA-C03).",
+    cognitive: "Remember → Understand → Apply",
+    stage: "Reflective observation",
+    requiredEvidence: "Official score report PDF · Credly badge verification link · Candidate ID record",
+    briefTitle: "External industry cloud competency validation",
+    briefDesc: "Submit official AWS certification credentials. Faculty verifies the authenticity of the digital badge via Credly/AWS Certification portal.",
+    dependencies: "AWS Certification account · Credly public badge link",
+    outcomes: "PO2 (Cloud Architecture) · PO8 (Professional Delivery)",
+    criteria: [
+      ["Needs revision", "Verification link is invalid, score report is obscured, or certificate has expired."],
+      ["Meets industry standard", "Active AWS SAA-C03 certification verified via authenticated Credly badge link."],
+      ["Exceeds expectations", "Demonstrated hands-on CDK/Terraform infrastructure repository mapped to AWS architectural pillars."]
+    ],
+    artifacts: [
+      ["AWS SAA-C03 Score Report PDF", "Accepted"],
+      ["Credly Digital Badge verification link", "Verification pending"],
+      ["Infrastructure IaC mapping document", "Draft"]
+    ],
+    history: [
+      ["02 Sep · 11:00", "Verification submitted", "Credly badge link submitted for Arun Nadh G verification."],
+      ["29 Aug · 14:20", "Score report accepted", "Score report verified by faculty advisor."]
+    ]
+  }
+};
+
+function Workboard({
+  openEvidence,
+  notify,
+  onNavigate,
+  selectedAssignmentId = "DS-907",
+  onSelectAssignment,
+}: {
+  openEvidence: (assignment?: string) => void;
+  notify: (message: string) => void;
+  onNavigate?: (page: string, assignmentId?: string) => void;
+  selectedAssignmentId?: string;
+  onSelectAssignment?: (id: string) => void;
+}) {
   const [assignmentView, setAssignmentView] = useState("Brief");
-  const rows = [["DS-904", "Full-stack integration and test readiness", "Full-Stack Engineer", "Krishnasree K", "Faculty review", "5 / 7", "14 Sep"], ["DS-905", "API contract and PostgreSQL integration", "Backend Engineer", "Soorya S Kumar", "Under review", "6 / 6", "15 Sep"], ["DS-906", "AWS SAA-C03 certification evidence", "Cloud Associate", "Arun Nadh G", "Verification pending", "2 / 3", "18 Sep"], ["DS-907", "End-to-end quality-gate revision", "Quality Engineer", "Ajitha V S", "Revision required", "4 / 6", "20 Sep"]];
-  return <><PageHeader eyebrow="WORK BOARD · PROJECT-IMMERSIVE LEARNING" title="Full-stack assignments, Sprint work and evidence" description="Complete outcome-mapped engineering work with explicit contracts, dependencies, professional artifacts and faculty review." action="Record learning evidence" onAction={openEvidence} />
+  const [activeId, setActiveId] = useState(selectedAssignmentId);
+
+  useEffect(() => {
+    if (selectedAssignmentId && selectedAssignmentId !== activeId) {
+      setActiveId(selectedAssignmentId);
+    }
+  }, [selectedAssignmentId]);
+
+  const rows = [
+    ["DS-904", "Full-stack integration and test readiness", "Full-Stack Engineer", "Krishnasree K", "Faculty review", "5 / 7", "14 Sep"],
+    ["DS-905", "API contract and PostgreSQL integration", "Backend Engineer", "Soorya S Kumar", "Under review", "6 / 6", "15 Sep"],
+    ["DS-906", "AWS SAA-C03 certification evidence", "Cloud Associate", "Arun Nadh G", "Verification pending", "2 / 3", "18 Sep"],
+    ["DS-907", "End-to-end quality-gate revision", "Quality Engineer", "Ajitha V S", "Revision required", "4 / 6", "20 Sep"]
+  ];
+
+  const handleSelect = (id: string) => {
+    setActiveId(id);
+    onSelectAssignment?.(id);
+    notify(`${id} assignment loaded on workbench`);
+  };
+
+  const current = WORKBOARD_ASSIGNMENTS[activeId] ?? WORKBOARD_ASSIGNMENTS["DS-907"];
+
+  return <>
+    <PageHeader
+      eyebrow="WORK BOARD · PROJECT-IMMERSIVE LEARNING"
+      title="Full-stack assignments, Sprint work and evidence"
+      description="Complete outcome-mapped engineering work with explicit contracts, dependencies, professional artifacts and faculty review."
+      action="Record learning evidence"
+      onAction={() => openEvidence(current.id)}
+    />
     {/* New Student Onboarding Banner: How Work Board connects to Dashboard */}
     <article className="panel workboard-onboarding-card">
       <div className="wb-onboard-content">
@@ -525,9 +734,127 @@ function Workboard({ openEvidence, notify, onNavigate }: { openEvidence: () => v
         </button>
       )}
     </article>
-    <article className="panel mission-command"><div><span className="eyebrow">SELECTED ASSIGNMENT · DS-904</span><h2>Can the integrated product withstand a professional live demonstration?</h2><p>Connect the responsive client, versioned API and PostgreSQL data layer; prove priority workflows, failure handling, role boundaries and reproducible local operation.</p></div><dl><div><dt>Project role</dt><dd>Full-Stack Engineer</dd></div><div><dt>Cognitive focus</dt><dd>Analyze → Evaluate → Create</dd></div><div><dt>Learning stage</dt><dd>Active experimentation</dd></div><div><dt>Required evidence</dt><dd>OpenAPI · PR · migrations · E2E report · runbook</dd></div></dl></article>
-    <article className="panel assignment-workspace"><div className="assignment-tabs" role="tablist" aria-label="Assignment workspace">{["Brief", "Criteria", "Artifacts", "History"].map((item) => <button role="tab" aria-selected={assignmentView === item} className={assignmentView === item ? "active" : ""} key={item} onClick={() => setAssignmentView(item)}>{item}</button>)}</div>{assignmentView === "Brief" && <div className="assignment-view"><div><span className="eyebrow">CLIENT BRIEF</span><h3>Build and defend a reliable full-stack product slice</h3><p>Deliver the authenticated project-submission journey across the Next.js client, versioned services and PostgreSQL. The solution must reproduce locally and demonstrate expected and failure paths.</p></div><dl><div><dt>Official review</dt><dd>14 September</dd></div><div><dt>Dependencies</dt><dd>Approved API contract · mock identity adapter</dd></div><div><dt>Outcomes</dt><dd>PO2 · PO3 · PO4 · PO8</dd></div></dl></div>}{assignmentView === "Criteria" && <div className="criterion-list">{[["Needs revision", "Workflow is unreliable, evidence is incomplete or setup cannot be reproduced."], ["Meets industry standard", "Priority and failure paths are verified, traceable and independently reproducible."], ["Exceeds expectations", "Secure boundaries, observability and resilient recovery are justified with evidence."]].map((item) => <span key={item[0]}><b>{item[0]}</b><p>{item[1]}</p></span>)}</div>}{assignmentView === "Artifacts" && <div className="artifact-list">{[["OpenAPI 3.1 contract", "Accepted"], ["PR-42 · integration implementation", "Accepted"], ["PostgreSQL migration set", "Under review"], ["Playwright E2E trace", "Revision required"], ["Local deployment runbook", "Accepted"]].map((item) => <button key={item[0]} onClick={() => notify(`${item[0]} opened`)}><Icon name="file" /><span><b>{item[0]}</b><small>{item[1]}</small></span><Icon name="arrow" /></button>)}</div>}{assignmentView === "History" && <div className="history-list">{[["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios."], ["01 Sep · 11:20", "Evidence reviewed", "OpenAPI contract and integration pull request accepted."], ["30 Aug · 18:05", "Submission created", "Five professional artifacts linked to DS-904."]].map((item) => <span key={item[0]}><time>{item[0]}</time><b>{item[1]}</b><p>{item[2]}</p></span>)}</div>}<div className="assignment-actions"><button onClick={() => notify("Draft progress saved")}>Save progress</button><button onClick={openEvidence}>Attach evidence</button><button className="primary-button" onClick={() => notify("Submission sent for faculty review")}>Submit for review <Icon name="arrow" /></button></div></article>
-    <FilterBar placeholder="Search assignment or engineering evidence" /><article className="panel data-table"><div className="table-head"><span>Assignment</span><span>Role</span><span>Reviewer</span><span>Workflow</span><span>Evidence</span><span>Review</span></div>{rows.map((row) => <button key={row[0]} onClick={() => notify(`${row[0]} assignment opened`)}><span><b>{row[0]} · {row[1]}</b><small>Semester II Full-Stack Engineering</small></span><span>{row[2]}</span><span>{row[3]}</span><span><i className={`status ${row[4].toLowerCase().replaceAll(" ", "-")}`}>{row[4]}</i></span><span>{row[5]}</span><span><b>{row[6]}</b><Icon name="arrow" /></span></button>)}</article></>;
+
+    <article className="panel mission-command">
+      <div>
+        <span className="eyebrow">SELECTED ASSIGNMENT · {current.id}</span>
+        <h2>{current.question}</h2>
+        <p>{current.summary}</p>
+      </div>
+      <dl>
+        <div><dt>Project role</dt><dd>{current.role}</dd></div>
+        <div><dt>Cognitive focus</dt><dd>{current.cognitive}</dd></div>
+        <div><dt>Learning stage</dt><dd>{current.stage}</dd></div>
+        <div><dt>Required evidence</dt><dd>{current.requiredEvidence}</dd></div>
+      </dl>
+    </article>
+
+    <article className="panel assignment-workspace">
+      <div className="assignment-tabs" role="tablist" aria-label="Assignment workspace">
+        {["Brief", "Criteria", "Artifacts", "History"].map((item) => (
+          <button
+            role="tab"
+            aria-selected={assignmentView === item}
+            className={assignmentView === item ? "active" : ""}
+            key={item}
+            onClick={() => setAssignmentView(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      {assignmentView === "Brief" && (
+        <div className="assignment-view">
+          <div>
+            <span className="eyebrow">CLIENT BRIEF</span>
+            <h3>{current.briefTitle}</h3>
+            <p>{current.briefDesc}</p>
+          </div>
+          <dl>
+            <div><dt>Official review</dt><dd>{current.reviewDate}</dd></div>
+            <div><dt>Dependencies</dt><dd>{current.dependencies}</dd></div>
+            <div><dt>Outcomes</dt><dd>{current.outcomes}</dd></div>
+          </dl>
+        </div>
+      )}
+      {assignmentView === "Criteria" && (
+        <div className="criterion-list">
+          {current.criteria.map((item) => (
+            <span key={item[0]}>
+              <b>{item[0]}</b>
+              <p>{item[1]}</p>
+            </span>
+          ))}
+        </div>
+      )}
+      {assignmentView === "Artifacts" && (
+        <div className="artifact-list">
+          {current.artifacts.map((item) => (
+            <button key={item[0]} onClick={() => notify(`${item[0]} opened`)}>
+              <Icon name="file" />
+              <span>
+                <b>{item[0]}</b>
+                <small>{item[1]}</small>
+              </span>
+              <Icon name="arrow" />
+            </button>
+          ))}
+        </div>
+      )}
+      {assignmentView === "History" && (
+        <div className="history-list">
+          {current.history.map((item) => (
+            <span key={item[0]}>
+              <time>{item[0]}</time>
+              <b>{item[1]}</b>
+              <p>{item[2]}</p>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="assignment-actions">
+        <button onClick={() => notify(`Draft progress saved for ${current.id}`)}>Save progress</button>
+        <button onClick={() => openEvidence(current.id)}>Attach evidence</button>
+        <button className="primary-button" onClick={() => notify(`${current.id} submission sent for faculty review`)}>
+          Submit for review <Icon name="arrow" />
+        </button>
+      </div>
+    </article>
+
+    <FilterBar placeholder="Search assignment or engineering evidence" />
+    <article className="panel data-table">
+      <div className="table-head">
+        <span>Assignment</span>
+        <span>Role</span>
+        <span>Reviewer</span>
+        <span>Workflow</span>
+        <span>Evidence</span>
+        <span>Review</span>
+      </div>
+      {rows.map((row) => {
+        const isSelected = row[0] === current.id;
+        return (
+          <button
+            key={row[0]}
+            className={isSelected ? "active-assignment-row" : ""}
+            aria-selected={isSelected}
+            onClick={() => handleSelect(row[0])}
+            title={`Select ${row[0]} to load its brief and artifacts into workbench`}
+          >
+            <span>
+              <b>{row[0]} · {row[1]}</b>
+              <small>Semester II Full-Stack Engineering {isSelected ? "· Active on workbench" : ""}</small>
+            </span>
+            <span>{row[2]}</span>
+            <span>{row[3]}</span>
+            <span><i className={`status ${row[4].toLowerCase().replaceAll(" ", "-")}`}>{row[4]}</i></span>
+            <span>{row[5]}</span>
+            <span><b>{row[6]}</b><Icon name="arrow" /></span>
+          </button>
+        );
+      })}
+    </article>
+  </>;
 }
 
 function EvidenceLibrary({ openEvidence, notify }: { openEvidence: () => void; notify: (message: string) => void }) {

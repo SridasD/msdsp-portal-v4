@@ -3174,7 +3174,7 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .v2-task-course {
   font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text);
   background: var(--surface-3);
   padding: 2px 7px;
   border-radius: 4px;
@@ -3774,7 +3774,7 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .v2-wb-help-text p {
   margin: 2px 0 0;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text);
   line-height: 1.45;
 }
 .v2-wb-jump-btn {
@@ -3810,6 +3810,26 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
   background: color-mix(in srgb, var(--indigo) 10%, var(--surface));
   color: var(--indigo-dark);
   border-color: var(--indigo);
+}
+
+/* Global Code Element Accessible Styling */
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+/* Work Board Active Assignment Table Selection */
+.data-table > button.active-assignment-row {
+  background: color-mix(in srgb, var(--indigo) 8%, var(--surface));
+  border-left: 4px solid var(--indigo);
+}
+.data-table > button.active-assignment-row > span:first-child b {
+  color: var(--indigo);
 }
 
 /* Work Board Onboarding Explainer Card */

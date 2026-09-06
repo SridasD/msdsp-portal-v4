@@ -10,7 +10,7 @@ interface StudentDashboardV2Props {
   openEvidence: (assignment?: string) => void;
   notify: (message: string) => void;
   onSwitchToClassic: () => void;
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, assignmentId?: string) => void;
 }
 
 export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClassic, onNavigate }: StudentDashboardV2Props) {
@@ -272,7 +272,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
                 <button
                   type="button"
                   className="v2-secondary-btn"
-                  onClick={() => onNavigate("Work Board")}
+                  onClick={() => onNavigate("Work Board", "DS-907")}
                   title="Open DS-907 on the Work Board"
                 >
                   <Icon name="brief" /> Execute on Work Board
@@ -318,7 +318,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
                 <button
                   type="button"
                   className="v2-wb-jump-btn"
-                  onClick={() => onNavigate("Work Board")}
+                  onClick={() => onNavigate("Work Board", "DS-907")}
                   title="Navigate to the full Work Board"
                 >
                   Open Work Board →
@@ -370,7 +370,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
                       <button
                         type="button"
                         className="v2-action-btn secondary"
-                        onClick={() => onNavigate("Work Board")}
+                        onClick={() => onNavigate("Work Board", task.id)}
                         title={`Open ${task.id} on Work Board`}
                       >
                         <Icon name="brief" /> View on Board
