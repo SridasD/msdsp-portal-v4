@@ -4,58 +4,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { EvidenceModal } from "./components/evidence-modal";
 import { FilterBar, Icon, Metric, PageHeader, PanelHeading, ScoreRow } from "./components/portal-primitives";
 import { coordinators, levelCoordination, semesterCoordination } from "./coordination-data";
-import { academicComponents, cycles, programmeRules, prototypeCohort, workspaceNavigation, type Cycle } from "./portal-config";
-
-type Role = "student" | "courseHead" | "mentor";
-type Theme = "light" | "dark" | "system";
-type MentorKind = "domain" | "team";
-
-const sprintData = [
-  { no: "01", name: "Contract", detail: "OpenAPI contract and integration boundaries", state: "Completed" },
-  { no: "02", name: "Connect", detail: "Frontend, backend and authentication flow", state: "Completed" },
-  { no: "03", name: "Persist", detail: "PostgreSQL schema, validation and migrations", state: "Completed" },
-  { no: "04", name: "Verify", detail: "API, integration and end-to-end quality gates", state: "In progress" },
-  { no: "05", name: "Demonstrate", detail: "Live full-stack review and technical defence", state: "Next" },
-];
-const levelNinePoints = [
-  { component: "Frontend–backend integration", evidence: "PR-42 · OpenAPI contract", awarded: 230, maximum: 250, status: "Verified" },
-  { component: "End-to-end test suite", evidence: "Playwright report · revision open", awarded: 170, maximum: 200, status: "Revision" },
-  { component: "AWS SAA-C03", evidence: "Certificate evidence · pending review", awarded: 160, maximum: 200, status: "Provisional" },
-  { component: "Full-stack live demonstration", evidence: "Demonstration scheduled · 16 Sep", awarded: 120, maximum: 200, status: "Scheduled" },
-  { component: "Code review & documentation", evidence: "Reviewed PR · local runbook", awarded: 100, maximum: 150, status: "Verified" },
-] as const;
-const navIcons: Record<string, string> = {
-  Overview: "grid",
-  "Course Details": "book",
-  "Programme Workflow": "network",
-  "Course Coordination": "network",
-  "Work Board": "brief",
-  "Evidence & Portfolio": "file",
-  "Skills & Outcomes": "target",
-  "Faculty Feedback": "message",
-  Calendar: "calendar",
-  "Information Centre": "book",
-  "Performance & Results": "chart",
-  "Learning Cycle Planning": "calendar",
-  "Assignment Management": "brief",
-  "Student Monitor": "users",
-  "Activity Review": "review",
-  "Academic Evaluation": "chart",
-  "Reports & Analytics": "report",
-  "Assigned Learners": "users",
-  "My Allocations": "layers",
-  "Learners & Teams": "users",
-  "Sprint Workspace": "layers",
-  "Review Queue": "review",
-  "Evidence Review": "review",
-  "Feedback & Revisions": "message",
-  "Mentoring Records": "message",
-  "Competency Evidence": "target",
-  "Competency & Calibration": "target",
-  Escalations: "shield",
-  "Evaluation Recommendations": "chart",
-  "Recommendation Tracker": "chart",
-};
+import { academicComponents, cycles, levelNinePoints, programmeRules, prototypeCohort, sprintData, workspaceIcons, workspaceNavigation, type Cycle, type MentorKind, type Role, type Theme } from "./portal-config";
 
 export default function Portal() {
   const [role, setRole] = useState<Role>("student");
@@ -138,7 +87,7 @@ export default function Portal() {
       <div className="role-switch" role="group" aria-label="Prototype role"><button type="button" aria-pressed={role === "student"} className={role === "student" ? "active" : ""} onClick={() => changeRole("student")}>Student</button><button type="button" aria-pressed={role === "courseHead"} className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")}>Course Head</button><button type="button" aria-pressed={role === "mentor"} className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")}>Mentor</button></div>
       {role === "mentor" && <div className="mentor-persona-switch" aria-label="Mentor responsibility"><span>MENTOR RESPONSIBILITY</span><div><button className={mentorKind === "domain" ? "active" : ""} onClick={() => { setMentorKind("domain"); setPage("Overview"); }}>Domain Mentor</button><button className={mentorKind === "team" ? "active" : ""} onClick={() => { setMentorKind("team"); setPage("Overview"); }}>Team Mentor</button></div></div>}
       <p className="nav-label">{role === "student" ? "LEARNING WORKSPACE" : role === "courseHead" ? "COURSE HEAD WORKSPACE" : "MENTOR WORKSPACE"}</p>
-      <nav id="primary-navigation" aria-label="Workspace navigation">{navItems.map((item) => <button type="button" key={item} aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => changePage(item)}><Icon name={navIcons[item] ?? "grid"} />{item}{item === "Activity Review" && <em aria-label="14 items">14</em>}</button>)}</nav>
+      <nav id="primary-navigation" aria-label="Workspace navigation">{navItems.map((item) => <button type="button" key={item} aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => changePage(item)}><Icon name={workspaceIcons[item] ?? "grid"} />{item}{item === "Activity Review" && <em aria-label="14 items">14</em>}</button>)}</nav>
       <div className="cycle-mini"><div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div><b>{cycle.id} · Official Level {cycle.level}</b><p>{cycle.title}</p><div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div></div>
       <div className="attendance-note"><Icon name="shield" /><div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div></div>
       <small className="prototype-label"><i /> Interactive academic prototype</small>

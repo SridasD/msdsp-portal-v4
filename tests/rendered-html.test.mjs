@@ -153,4 +153,7 @@ test("keeps workspace information architecture in governed configuration", async
   assert.match(config, /courseHead:[^\n]*"Course Details"/);
   assert.match(config, /mentor:[^\n]*"Course Details"/);
   assert.match(config, /prototypeCohort/);
+  assert.match(config, /workspaceIcons/);
+  assert.match(config, /sprintData/);
+  assert.match(config, /levelNinePoints/);
 });
