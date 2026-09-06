@@ -883,13 +883,16 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .industry-rubric.compact { margin: 18px 0 4px; }
 .industry-rubric.compact > div { min-height: 120px; }
 
-.modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(5, 9, 19, .66); backdrop-filter: blur(7px); animation: fade .2s ease both; }
+.modal-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(5, 9, 19, .72); backdrop-filter: blur(8px); animation: fade .2s ease both; }
 .evidence-modal { position: relative; width: min(570px, 100%); padding: 28px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 30px 90px rgba(0, 0, 0, .34); animation: modal-in .28s cubic-bezier(.2, .8, .2, 1) both; }
 .evidence-modal h2 { margin: 6px 0; font-size: 24px; }
 .evidence-modal > p { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
 .evidence-modal label { margin-top: 12px; }
 .evidence-modal textarea { min-height: 95px; resize: vertical; }
-.modal-close { position: absolute; right: 15px; top: 12px; border: 0; background: transparent; color: var(--muted); font-size: 26px; }
+.modal-close { position: absolute; right: 16px; top: 16px; width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); cursor: pointer; transition: all .15s; padding: 0; }
+.modal-close:hover { background: var(--surface-3); color: var(--text); border-color: var(--line-strong); }
+.modal-close:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.modal-close svg { width: 16px; height: 16px; stroke-width: 2.2; }
 .upload-box { min-height: 105px; align-items: center; justify-content: center; border: 1px dashed var(--line-strong); border-radius: 10px; background: var(--surface-2); text-align: center; cursor: pointer; }
 .upload-box input { position: absolute; opacity: 0; pointer-events: none; }
 .upload-box svg { color: var(--indigo); }
@@ -3183,26 +3186,45 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 
 /* Student Guide Modal */
 .v2-guide-modal {
-  max-width: 780px;
   width: min(780px, 94vw);
-  max-height: 88vh;
-  overflow-y: auto;
+  max-height: min(85vh, 760px);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+}
+
+.v2-guide-header {
+  position: relative;
+  flex-shrink: 0;
+  padding-right: 44px;
 }
 
 .v2-guide-lead {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
-  margin: 4px 0 16px;
+  margin: 4px 0 14px;
 }
 
 .v2-guide-tabs {
+  flex-shrink: 0;
   display: flex;
   gap: 8px;
   border-bottom: 1px solid var(--line);
   padding-bottom: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   overflow-x: auto;
+}
+
+.v2-guide-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-right: -4px;
 }
 
 .v2-guide-tabs button {
