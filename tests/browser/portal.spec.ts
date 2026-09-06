@@ -97,3 +97,45 @@ test("opens evidence modal pre-selected to DS-907 from urgent revision hero", as
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
 });
+
+test("renders progression ribbon, expands quest points, and opens student guide modal", async ({ page }) => {
+  await openPortal(page);
+
+  // 1. Check progression ribbon
+  await expect(page.getByText("LEVEL PATHWAY")).toBeVisible();
+  await expect(page.getByText("SPRINT CADENCE")).toBeVisible();
+  await expect(page.getByText("L9 · Current")).toBeVisible();
+
+  // 2. Expand quest points ledger in score card
+  const toggleBtn = page.getByRole("button", { name: /Inspect Level 9 Quest Points/ });
+  await expect(toggleBtn).toBeVisible();
+  await toggleBtn.click();
+  await expect(page.getByText("Frontend–backend integration")).toBeVisible();
+  await expect(page.getByText("230 / 250 pts")).toBeVisible();
+
+  // 3. Open Student Guide modal
+  const guideBtn = page.getByRole("button", { name: "Open Student Guide: How Learning Works" });
+  await guideBtn.click();
+
+  const guideModal = page.getByRole("dialog", { name: "How Your Learning, Tasks & Scores Work" });
+  await expect(guideModal).toBeVisible();
+
+  // Check hierarchy tab
+  await expect(page.getByText("M.Sc. Data Science & Product Development")).toBeVisible();
+  await expect(page.getByText("DS-907 · End-to-End Quality Gate Revision")).toBeVisible();
+
+  // Switch to Acronyms tab
+  await page.getByRole("tab", { name: /2\. Acronyms/ }).click();
+  await expect(page.getByText("Data Science Assignment Code")).toBeVisible();
+  await expect(page.getByText("Programme Outcome (PO1–PO8)")).toBeVisible();
+
+  // Switch to Scores tab
+  await page.getByRole("tab", { name: /3\. Scores vs Attendance/ }).click();
+  await expect(page.getByText("Academic Result (82.4%)")).toBeVisible();
+  await expect(page.getByText("Attendance (DUK@360 ERP)")).toBeVisible();
+
+  // Close modal via Escape
+  await page.keyboard.press("Escape");
+  await expect(guideModal).toBeHidden();
+});
+

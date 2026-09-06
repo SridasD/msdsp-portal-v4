@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { FilterBar, Icon, Metric, PageHeader, PanelHeading, ScoreRow } from "./portal-primitives";
 import { academicComponents, levelNinePoints, sprintData, type Cycle } from "../portal-config";
+import { StudentGuideModal } from "./student-guide-modal";
 
 interface StudentDashboardV2Props {
   cycle: Cycle;
@@ -12,6 +13,8 @@ interface StudentDashboardV2Props {
 }
 
 export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClassic }: StudentDashboardV2Props) {
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [pointsExpanded, setPointsExpanded] = useState(false);
   const [checklist, setChecklist] = useState({
     tokenRefresh: false,
     rollbackTrace: false,
@@ -22,6 +25,22 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
     () => academicComponents.reduce((sum, [, score, weight]) => sum + (score * weight) / 100, 0),
     []
   );
+
+  const levelRoute = [
+    ["L6", "Complete"],
+    ["L7", "Complete"],
+    ["L8", "Complete"],
+    ["L9", "Current"],
+    ["L10", "Locked"],
+  ];
+
+  const sprints = [
+    { no: "01", name: "Foundation", state: "Complete" },
+    { no: "02", name: "Contracts", state: "Complete" },
+    { no: "03", name: "Integrate", state: "Complete" },
+    { no: "04", name: "Verify", state: "Current" },
+    { no: "05", name: "Live Demo", state: "Upcoming" },
+  ];
 
   const teamMembers = [
     { name: "Anakha Rajesh", role: "Full-Stack Engineer (You)", status: "Revision Open", task: "DS-907 E2E failure recovery", tone: "violet" },
@@ -34,33 +53,50 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
     {
       id: "DS-907",
       title: "End-to-End Quality Gate Revision",
+      course: "CS105 DevOps & Automated Pipelines",
+      outcomes: "PO4 · PSO4",
       role: "Quality Engineer",
       due: "05 Sep · 34h left",
       urgency: "urgent",
       status: "Revision required",
       reviewer: "Ajitha V S",
+      subtasks: "Sub-activity: 3 items (2 failing test scenarios)",
       evidence: "Playwright failure traces (v3 pending)",
     },
     {
       id: "DS-904",
       title: "Full-Stack Integration & Test Readiness",
+      course: "CS102 Full Stack & CS103 Backend",
+      outcomes: "PO2 · PO3",
       role: "Full-Stack Engineer",
       due: "14 Sep · 10 days",
       urgency: "active",
       status: "Faculty review",
       reviewer: "Krishnasree K",
-      evidence: "5 of 7 artifacts accepted",
+      subtasks: "Sub-activity: 5 of 7 professional artifacts accepted",
+      evidence: "OpenAPI, PR-42, migration sets, runbook",
     },
     {
       id: "DS-905",
       title: "API Contract & PostgreSQL Integration",
+      course: "CS103 Modern Backend Systems",
+      outcomes: "PO3 · PSO1",
       role: "Backend Engineer",
       due: "15 Sep · 11 days",
       urgency: "active",
       status: "Under review",
       reviewer: "Soorya S Kumar",
-      evidence: "OpenAPI 3.1 & migration scripts",
+      subtasks: "Sub-activity: OpenAPI 3.1 & migration scripts",
+      evidence: "Schema migrations & endpoint assertions",
     },
+  ];
+
+  const questBreakdown = [
+    { name: "Frontend–backend integration", points: "230 / 250 pts", status: "complete" },
+    { name: "End-to-end test suite (DS-907)", points: "170 / 200 pts", status: "active" },
+    { name: "AWS SAA-C03 certification", points: "160 / 200 pts", status: "review" },
+    { name: "Full-stack live demonstration", points: "120 / 200 pts", status: "upcoming" },
+    { name: "Code review & documentation", points: "100 / 150 pts", status: "complete" },
   ];
 
   return (
@@ -77,6 +113,14 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
           </button>
         </div>
         <div className="v2-quick-links">
+          <button
+            type="button"
+            className="v2-text-btn v2-guide-trigger"
+            onClick={() => setGuideOpen(true)}
+            aria-label="Open Student Guide: How Learning Works"
+          >
+            <Icon name="help" /> <strong>How Learning Works</strong>
+          </button>
           <button type="button" className="v2-text-btn" onClick={() => notify("Git branch feat/ds-907 opened")}>
             <Icon name="file" /> Branch: <code>feat/ds-907-e2e</code>
           </button>
@@ -94,11 +138,65 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
         onAction={() => openEvidence("DS-907 · End-to-end quality-gate revision")}
       />
 
+      {/* Progression Context Ribbon: Level Pathway & Sprint Stepper */}
+      <div className="v2-progression-ribbon" role="region" aria-label="Academic progression status">
+        <div className="v2-progression-section">
+          <div className="v2-prog-header">
+            <span className="v2-prog-label">LEVEL PATHWAY</span>
+            <small>Semester II · Level 9 of 20</small>
+          </div>
+          <div
+            className="v2-level-stepper"
+            tabIndex={0}
+            role="region"
+            aria-label="Level pathway progression; scroll horizontally to review all levels"
+          >
+            {levelRoute.map((item, idx) => (
+              <span
+                key={item[0]}
+                className={`v2-lstep ${item[1].toLowerCase()}`}
+                title={`Level ${item[0]}: ${item[1]}`}
+              >
+                <i>{idx < 3 ? <Icon name="check" /> : item[0]}</i>
+                <span>{item[0]} · {item[1]}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="v2-prog-divider" />
+
+        <div className="v2-progression-section">
+          <div className="v2-prog-header">
+            <span className="v2-prog-label">SPRINT CADENCE</span>
+            <small>Weeks 17–20 · 5 Sprints</small>
+          </div>
+          <div
+            className="v2-sprint-stepper"
+            tabIndex={0}
+            role="region"
+            aria-label="Sprint cadence timeline; scroll horizontally to review all sprints"
+          >
+            {sprints.map((s, idx) => (
+              <span key={s.no} className={`v2-sstep ${s.state.toLowerCase()}`}>
+                <span className="v2-sstep-num">{s.no}</span>
+                <span className="v2-sstep-name">{s.name}</span>
+                {idx < 3 && <Icon name="check" />}
+                {s.state === "Current" && <em className="v2-current-tag">ACTIVE</em>}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* 1. Hero Action Banner: Urgent Revision with Direct Reviewer Feedback */}
       <article className="v2-hero-action-card">
         <div className="v2-hero-badge-row">
           <span className="v2-urgency-badge">
             <i /> ACTION REQUIRED · SPRINT 04 QUALITY GATE
+          </span>
+          <span className="v2-hero-hierarchy-pill">
+            Assignment: <strong>DS-907</strong> · Course: <strong>CS105 DevOps</strong> · Outcomes: <strong>PO4 · PSO4</strong>
           </span>
           <time className="v2-countdown-timer">
             <Icon name="calendar" /> Due in 34 hours · 05 September, 17:00
@@ -123,8 +221,11 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
               </div>
             </div>
 
-            {/* Interactive Revision Checklist */}
+            {/* Interactive Revision Checklist (Sub-Activities) */}
             <div className="v2-revision-checklist">
+              <span className="v2-checklist-title">
+                SUB-ACTIVITIES (WORK ITEMS TO COMPLETE):
+              </span>
               <label>
                 <input
                   type="checkbox"
@@ -186,7 +287,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
           <article className="panel v2-card">
             <PanelHeading
               label="CURRENT SPRINT 04 WORK"
-              title="Today's Active Tasks & Deliverables"
+              title="Today's Active Assignments & Deliverables"
               meta="3 active items"
             />
             <div className="v2-task-list">
@@ -194,20 +295,29 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
                 <div key={task.id} className={`v2-task-item ${task.urgency}`}>
                   <div className="v2-task-info">
                     <div className="v2-task-meta-top">
-                      <span className="v2-task-code">{task.id}</span>
-                      <span className="v2-task-role">{task.role}</span>
+                      <span className="v2-task-code">Assignment {task.id}</span>
+                      <span className="v2-task-course">{task.course}</span>
+                      <span className="v2-task-outcomes" title="Mapped Outcomes">
+                        {task.outcomes}
+                      </span>
                       <i className={`status ${task.status.toLowerCase().replaceAll(" ", "-")}`}>{task.status}</i>
                     </div>
                     <h3>{task.title}</h3>
-                    <p>
-                      <strong>Evidence:</strong> {task.evidence}
+                    <p className="v2-task-subactivities">
+                      <strong>{task.subtasks}</strong>
+                    </p>
+                    <p className="v2-task-evidence">
+                      <span>Evidence:</span> {task.evidence}
                     </p>
                     <div className="v2-task-sub">
                       <span>
                         <Icon name="calendar" /> {task.due}
                       </span>
                       <span>
-                        <Icon name="user" /> Reviewer: {task.reviewer}
+                        <Icon name="user" /> Role: {task.role}
+                      </span>
+                      <span>
+                        <Icon name="shield" /> Reviewer: {task.reviewer}
                       </span>
                     </div>
                   </div>
@@ -350,7 +460,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
               <div className="v2-score-primary">
                 <b>{academicScore.toFixed(1)}%</b>
                 <span>ACADEMIC RESULT</span>
-                <small>Course Plan 5-component weighted view</small>
+                <small>Course Plan 5-component weighted mark (Transcript GPA)</small>
               </div>
               <div className="v2-score-divider" />
               <div className="v2-score-secondary">
@@ -370,13 +480,72 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
               <small>120 pts to Distinction threshold (90%)</small>
             </div>
 
+            {/* Expandable Quest Points Breakdown */}
+            <div className="v2-points-accordion-wrap">
+              <button
+                type="button"
+                className="v2-points-accordion-toggle"
+                onClick={() => setPointsExpanded(!pointsExpanded)}
+                aria-expanded={pointsExpanded}
+              >
+                <span>{pointsExpanded ? "Hide" : "Inspect"} Level 9 Quest Points (780 / 1,000)</span>
+                <Icon name="chevron" />
+              </button>
+
+              {pointsExpanded && (
+                <div className="v2-points-ledger">
+                  {questBreakdown.map((quest) => (
+                    <div key={quest.name} className={`v2-ledger-item ${quest.status}`}>
+                      <span>{quest.name}</span>
+                      <b>{quest.points}</b>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="v2-boundary-note">
               <Icon name="shield" />
               <small>Academic marks, gamification points, certification and attendance remain separate records.</small>
             </div>
           </article>
 
-          {/* B. Upcoming Academic Checkpoint */}
+          {/* B. Enrolled University Courses (Academic Curriculum Link) */}
+          <article className="panel v2-card">
+            <PanelHeading
+              label="ENROLLED COURSES"
+              title="Semester II Curriculum Mapping"
+              meta="Digital University Kerala"
+            />
+            <div className="v2-course-list">
+              <div className="v2-course-row completed">
+                <div className="v2-course-code">CS102</div>
+                <div className="v2-course-detail">
+                  <b>Full Stack Architecture & Cloud-Native Development</b>
+                  <small>Outcome: PO2 · Status: Completed</small>
+                </div>
+                <i className="status completed">Completed</i>
+              </div>
+              <div className="v2-course-row active">
+                <div className="v2-course-code">CS103</div>
+                <div className="v2-course-detail">
+                  <b>Modern Backend Systems & Data Engineering</b>
+                  <small>Outcome: PO3 · Status: In Progress</small>
+                </div>
+                <i className="status in-progress">In progress</i>
+              </div>
+              <div className="v2-course-row active">
+                <div className="v2-course-code">CS105</div>
+                <div className="v2-course-detail">
+                  <b>DevOps & Automated Pipelines</b>
+                  <small>Outcome: PO4 · Status: In Progress</small>
+                </div>
+                <i className="status in-progress">In progress</i>
+              </div>
+            </div>
+          </article>
+
+          {/* C. Upcoming Academic Checkpoint */}
           <article className="panel v2-card v2-checkpoint-card">
             <div className="card-icon">
               <Icon name="calendar" />
@@ -407,7 +576,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
             </button>
           </article>
 
-          {/* C. Verified Capabilities & Certifications */}
+          {/* D. Verified Capabilities & Certifications */}
           <article className="panel v2-card">
             <PanelHeading
               label="VERIFIED CAPABILITIES"
@@ -446,7 +615,7 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
             </div>
           </article>
 
-          {/* D. Recent Verifiable Evidence */}
+          {/* E. Recent Verifiable Evidence */}
           <article className="panel v2-card">
             <PanelHeading
               label="RECENT EVIDENCE"
@@ -495,6 +664,9 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
           </article>
         </aside>
       </div>
+
+      {/* Interactive Student Guide & Demystifier Modal */}
+      {guideOpen && <StudentGuideModal close={() => setGuideOpen(false)} />}
     </div>
   );
 }
