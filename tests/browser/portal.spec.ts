@@ -429,6 +429,48 @@ test("demystifies Performance & Results (Academic GPA vs Quest Points) and simul
   await expect(page.getByRole("button", { name: "DS-905 API & DS-907 Quality Gate →" })).toBeVisible();
 });
 
+test("renders enhanced Programme Workflow with 9 interactive Mermaid flowcharts", async ({ page }) => {
+  await openPortal(page);
+
+  // Switch to Course Head workspace
+  const mobileMenu = page.getByRole("button", { name: "Open navigation" });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("button", { name: "Course Head", exact: true }).click();
+
+  // Navigate to Programme Workflow
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Programme Workflow" }).click();
+
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Course Head workspace: Programme Workflow");
+
+  // Verify Mermaid Gallery heading and 9 diagrams metadata
+  await expect(page.getByText("MERMAID REFERENCE DIAGRAMS")).toBeVisible();
+  await expect(page.getByText("9 diagrams")).toBeVisible();
+
+  // Verify diagram SVG renders without error
+  const svg = page.locator(".mermaid-render svg");
+  await expect(svg).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".mermaid-render [role='alert']")).toBeHidden();
+
+  // Switch to 3-Tier Student Engine diagram
+  await page.getByRole("tab", { name: "3-Tier Student Engine" }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard to Portfolio closed loop" })).toBeVisible();
+  await expect(svg).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".mermaid-render [role='alert']")).toBeHidden();
+
+  // Switch to Quality Gate Remediation diagram
+  await page.getByRole("tab", { name: "Quality Gate Remediation" }).click();
+  await expect(page.getByRole("heading", { name: "E2E Failure to Verified Evidence" })).toBeVisible();
+  await expect(svg).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".mermaid-render [role='alert']")).toBeHidden();
+
+  // Switch to Outcome Architecture diagram
+  await page.getByRole("tab", { name: "Outcome Architecture" }).click();
+  await expect(page.getByRole("heading", { name: "PO1–PO8 & PSO1–PSO4 Framework" })).toBeVisible();
+  await expect(svg).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".mermaid-render [role='alert']")).toBeHidden();
+});
+
 
 
 
