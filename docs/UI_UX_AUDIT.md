@@ -39,7 +39,8 @@ Audit of the current single-route React/Vinext portal across Student, Course Hea
 ## Remaining recommendations
 
 - Split each role workspace into route-level modules and extract Dialog, Popover, Tabs, Table, Status, EmptyState, and Skeleton primitives.
-- Add automated axe-core checks and browser journeys for role switching, mobile navigation, cycle selection, form validation, and focus return.
+- Complete the remaining color-contrast remediation surfaced by axe-core, particularly compact status metadata and tinted state labels.
+- Extend browser journeys to cycle selection and faculty forms after their interaction contracts are finalised.
 - Replace wide mobile tables with stacked row disclosures after validating task frequency with students and faculty.
 - Validate real API loading, empty, error, and large-data states when backend responses are connected; the current prototype is static and cannot verify those conditions.
 
@@ -51,3 +52,4 @@ Audit of the current single-route React/Vinext portal across Student, Course Hea
 - Added programmatic state to workspace navigation, role controls, profile options, notifications, and Mermaid loading/error output.
 - Replaced key Student, Course Head, and Mentor horizontal tables with stacked mobile records while retaining desktop layouts.
 - Added a server route boundary in `app/page.tsx` and isolated interactive state in `app/portal.tsx`, preparing role workspaces for incremental code splitting.
+- Added Playwright journeys for role switching, mobile navigation, evidence validation and dialog focus return, with automated axe-core coverage for structural WCAG violations.
