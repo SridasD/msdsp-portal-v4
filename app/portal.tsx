@@ -172,15 +172,15 @@ export default function Portal() {
 
     <section ref={workspaceRef} id="workspace" tabIndex={-1} aria-label={`${role === "courseHead" ? "Course Head" : role === "mentor" ? "Mentor" : "Student"} workspace: ${page}`} className="workspace">
       <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div ref={cycleMenuRef} className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
-      <div key={`${role}-${mentorKind}-${page}-${cycleId}-${studentDashboardMode}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={handleOpenEvidence} notify={notify} dashboardMode={studentDashboardMode} setDashboardMode={handleDashboardModeChange} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
+      <div key={`${role}-${mentorKind}-${page}-${cycleId}-${studentDashboardMode}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={handleOpenEvidence} notify={notify} dashboardMode={studentDashboardMode} setDashboardMode={handleDashboardModeChange} onNavigate={changePage} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
     </section>
     {evidenceOpen && <EvidenceModal defaultAssignment={evidenceAssignment} close={() => { setEvidenceOpen(false); setEvidenceAssignment(undefined); }} save={() => { setEvidenceOpen(false); notify(`Evidence saved to ${evidenceAssignment ?? "DS-904"}`); setEvidenceAssignment(undefined); }} />}
     <div className="toast-region" aria-live="polite" aria-atomic="true">{toast && <div className="toast"><Icon name="check" />{toast}</div>}</div>
   </main>;
 }
 
-function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void }) {
-  if (page === "Work Board") return <Workboard openEvidence={() => openEvidence()} notify={notify} />;
+function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode, onNavigate }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void; onNavigate: (page: string) => void }) {
+  if (page === "Work Board") return <Workboard openEvidence={() => openEvidence()} notify={notify} onNavigate={onNavigate} />;
   if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} />;
   if (page === "Skills & Outcomes") return <OutcomesPage />;
   if (page === "Faculty Feedback") return <FeedbackPage notify={notify} />;
@@ -188,7 +188,7 @@ function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, se
   if (page === "Performance & Results") return <PerformancePage />;
   if (page === "Information Centre") return <StudentInformationCentre notify={notify} />;
   if (dashboardMode === "v2") {
-    return <StudentDashboardV2 cycle={cycle} openEvidence={openEvidence} notify={notify} onSwitchToClassic={() => setDashboardMode("classic")} />;
+    return <StudentDashboardV2 cycle={cycle} openEvidence={openEvidence} notify={notify} onSwitchToClassic={() => setDashboardMode("classic")} onNavigate={onNavigate} />;
   }
   return <StudentOverviewWithToggle cycle={cycle} openEvidence={() => openEvidence()} notify={notify} onSwitchToV2={() => setDashboardMode("v2")} />;
 }
@@ -497,10 +497,35 @@ function CourseCoordination({ notify }: { notify: (message: string) => void }) {
   </>;
 }
 
-function Workboard({ openEvidence, notify }: { openEvidence: () => void; notify: (message: string) => void }) {
+function Workboard({ openEvidence, notify, onNavigate }: { openEvidence: () => void; notify: (message: string) => void; onNavigate?: (page: string) => void }) {
   const [assignmentView, setAssignmentView] = useState("Brief");
   const rows = [["DS-904", "Full-stack integration and test readiness", "Full-Stack Engineer", "Krishnasree K", "Faculty review", "5 / 7", "14 Sep"], ["DS-905", "API contract and PostgreSQL integration", "Backend Engineer", "Soorya S Kumar", "Under review", "6 / 6", "15 Sep"], ["DS-906", "AWS SAA-C03 certification evidence", "Cloud Associate", "Arun Nadh G", "Verification pending", "2 / 3", "18 Sep"], ["DS-907", "End-to-end quality-gate revision", "Quality Engineer", "Ajitha V S", "Revision required", "4 / 6", "20 Sep"]];
-  return <><PageHeader eyebrow="WORK BOARD · PROJECT-IMMERSIVE LEARNING" title="Full-stack assignments, Sprint work and evidence" description="Complete outcome-mapped engineering work with explicit contracts, dependencies, professional artifacts and faculty review." action="Record learning evidence" onAction={openEvidence} /><article className="panel mission-command"><div><span className="eyebrow">SELECTED ASSIGNMENT · DS-904</span><h2>Can the integrated product withstand a professional live demonstration?</h2><p>Connect the responsive client, versioned API and PostgreSQL data layer; prove priority workflows, failure handling, role boundaries and reproducible local operation.</p></div><dl><div><dt>Project role</dt><dd>Full-Stack Engineer</dd></div><div><dt>Cognitive focus</dt><dd>Analyze → Evaluate → Create</dd></div><div><dt>Learning stage</dt><dd>Active experimentation</dd></div><div><dt>Required evidence</dt><dd>OpenAPI · PR · migrations · E2E report · runbook</dd></div></dl></article>
+  return <><PageHeader eyebrow="WORK BOARD · PROJECT-IMMERSIVE LEARNING" title="Full-stack assignments, Sprint work and evidence" description="Complete outcome-mapped engineering work with explicit contracts, dependencies, professional artifacts and faculty review." action="Record learning evidence" onAction={openEvidence} />
+    {/* New Student Onboarding Banner: How Work Board connects to Dashboard */}
+    <article className="panel workboard-onboarding-card">
+      <div className="wb-onboard-content">
+        <span className="eyebrow">NEW STUDENT REFERENCE · WORK BOARD WORKFLOW</span>
+        <h2>Your Engineering Execution Workbench</h2>
+        <p>
+          While your <strong>Overview Dashboard</strong> highlights priorities, deadlines, and your 780 Quest points, the <strong>Work Board</strong> is where you actually perform and submit that work: inspect the technical brief, check grading rubrics, attach engineering artifacts (PRs, migrations, test traces), and request faculty evaluation.
+        </p>
+        <div className="wb-step-flow">
+          <span className="wb-flow-pill"><Icon name="book" /> 1. Read Brief</span>
+          <span className="wb-arrow" aria-hidden="true">→</span>
+          <span className="wb-flow-pill"><Icon name="target" /> 2. Check Rubric Criteria</span>
+          <span className="wb-arrow" aria-hidden="true">→</span>
+          <span className="wb-flow-pill"><Icon name="file" /> 3. Attach Artifacts</span>
+          <span className="wb-arrow" aria-hidden="true">→</span>
+          <span className="wb-flow-pill accent"><Icon name="check" /> 4. Submit for Review</span>
+        </div>
+      </div>
+      {onNavigate && (
+        <button type="button" className="wb-overview-jump" onClick={() => onNavigate("Overview")} title="Return to Dashboard Overview">
+          ← Return to Dashboard Overview
+        </button>
+      )}
+    </article>
+    <article className="panel mission-command"><div><span className="eyebrow">SELECTED ASSIGNMENT · DS-904</span><h2>Can the integrated product withstand a professional live demonstration?</h2><p>Connect the responsive client, versioned API and PostgreSQL data layer; prove priority workflows, failure handling, role boundaries and reproducible local operation.</p></div><dl><div><dt>Project role</dt><dd>Full-Stack Engineer</dd></div><div><dt>Cognitive focus</dt><dd>Analyze → Evaluate → Create</dd></div><div><dt>Learning stage</dt><dd>Active experimentation</dd></div><div><dt>Required evidence</dt><dd>OpenAPI · PR · migrations · E2E report · runbook</dd></div></dl></article>
     <article className="panel assignment-workspace"><div className="assignment-tabs" role="tablist" aria-label="Assignment workspace">{["Brief", "Criteria", "Artifacts", "History"].map((item) => <button role="tab" aria-selected={assignmentView === item} className={assignmentView === item ? "active" : ""} key={item} onClick={() => setAssignmentView(item)}>{item}</button>)}</div>{assignmentView === "Brief" && <div className="assignment-view"><div><span className="eyebrow">CLIENT BRIEF</span><h3>Build and defend a reliable full-stack product slice</h3><p>Deliver the authenticated project-submission journey across the Next.js client, versioned services and PostgreSQL. The solution must reproduce locally and demonstrate expected and failure paths.</p></div><dl><div><dt>Official review</dt><dd>14 September</dd></div><div><dt>Dependencies</dt><dd>Approved API contract · mock identity adapter</dd></div><div><dt>Outcomes</dt><dd>PO2 · PO3 · PO4 · PO8</dd></div></dl></div>}{assignmentView === "Criteria" && <div className="criterion-list">{[["Needs revision", "Workflow is unreliable, evidence is incomplete or setup cannot be reproduced."], ["Meets industry standard", "Priority and failure paths are verified, traceable and independently reproducible."], ["Exceeds expectations", "Secure boundaries, observability and resilient recovery are justified with evidence."]].map((item) => <span key={item[0]}><b>{item[0]}</b><p>{item[1]}</p></span>)}</div>}{assignmentView === "Artifacts" && <div className="artifact-list">{[["OpenAPI 3.1 contract", "Accepted"], ["PR-42 · integration implementation", "Accepted"], ["PostgreSQL migration set", "Under review"], ["Playwright E2E trace", "Revision required"], ["Local deployment runbook", "Accepted"]].map((item) => <button key={item[0]} onClick={() => notify(`${item[0]} opened`)}><Icon name="file" /><span><b>{item[0]}</b><small>{item[1]}</small></span><Icon name="arrow" /></button>)}</div>}{assignmentView === "History" && <div className="history-list">{[["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios."], ["01 Sep · 11:20", "Evidence reviewed", "OpenAPI contract and integration pull request accepted."], ["30 Aug · 18:05", "Submission created", "Five professional artifacts linked to DS-904."]].map((item) => <span key={item[0]}><time>{item[0]}</time><b>{item[1]}</b><p>{item[2]}</p></span>)}</div>}<div className="assignment-actions"><button onClick={() => notify("Draft progress saved")}>Save progress</button><button onClick={openEvidence}>Attach evidence</button><button className="primary-button" onClick={() => notify("Submission sent for faculty review")}>Submit for review <Icon name="arrow" /></button></div></article>
     <FilterBar placeholder="Search assignment or engineering evidence" /><article className="panel data-table"><div className="table-head"><span>Assignment</span><span>Role</span><span>Reviewer</span><span>Workflow</span><span>Evidence</span><span>Review</span></div>{rows.map((row) => <button key={row[0]} onClick={() => notify(`${row[0]} assignment opened`)}><span><b>{row[0]} · {row[1]}</b><small>Semester II Full-Stack Engineering</small></span><span>{row[2]}</span><span>{row[3]}</span><span><i className={`status ${row[4].toLowerCase().replaceAll(" ", "-")}`}>{row[4]}</i></span><span>{row[5]}</span><span><b>{row[6]}</b><Icon name="arrow" /></span></button>)}</article></>;
 }

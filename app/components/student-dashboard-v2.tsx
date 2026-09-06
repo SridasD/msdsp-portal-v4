@@ -10,9 +10,10 @@ interface StudentDashboardV2Props {
   openEvidence: (assignment?: string) => void;
   notify: (message: string) => void;
   onSwitchToClassic: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClassic }: StudentDashboardV2Props) {
+export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClassic, onNavigate }: StudentDashboardV2Props) {
   const [guideOpen, setGuideOpen] = useState(false);
   const [pointsExpanded, setPointsExpanded] = useState(false);
   const [checklist, setChecklist] = useState({
@@ -267,13 +268,24 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
               >
                 Attach corrected test trace <Icon name="arrow" />
               </button>
-              <button
-                type="button"
-                className="v2-secondary-btn"
-                onClick={() => notify("DS-907 revision workspace opened")}
-              >
-                Open revision details
-              </button>
+              {onNavigate ? (
+                <button
+                  type="button"
+                  className="v2-secondary-btn"
+                  onClick={() => onNavigate("Work Board")}
+                  title="Open DS-907 on the Work Board"
+                >
+                  <Icon name="brief" /> Execute on Work Board
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="v2-secondary-btn"
+                  onClick={() => notify("DS-907 revision workspace opened")}
+                >
+                  Open revision details
+                </button>
+              )}
             </div>
           </aside>
         </div>
@@ -290,6 +302,30 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
               title="Today's Active Assignments & Deliverables"
               meta="3 active items"
             />
+
+            {/* Work Board Connection Banner for New Students */}
+            <div className="v2-workboard-helper-banner">
+              <div className="v2-wb-help-text">
+                <Icon name="brief" />
+                <div>
+                  <b>Connected to your Work Board</b>
+                  <p>
+                    These sprint tasks represent assignments on your <strong>Work Board</strong>. The Work Board is where you read the client brief, review rubric criteria, attach code artifacts, and submit for faculty review.
+                  </p>
+                </div>
+              </div>
+              {onNavigate && (
+                <button
+                  type="button"
+                  className="v2-wb-jump-btn"
+                  onClick={() => onNavigate("Work Board")}
+                  title="Navigate to the full Work Board"
+                >
+                  Open Work Board →
+                </button>
+              )}
+            </div>
+
             <div className="v2-task-list">
               {todayTasks.map((task) => (
                 <div key={task.id} className={`v2-task-item ${task.urgency}`}>
@@ -330,6 +366,16 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
                     >
                       Upload evidence
                     </button>
+                    {onNavigate && (
+                      <button
+                        type="button"
+                        className="v2-action-btn secondary"
+                        onClick={() => onNavigate("Work Board")}
+                        title={`Open ${task.id} on Work Board`}
+                      >
+                        <Icon name="brief" /> View on Board
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="v2-icon-btn"

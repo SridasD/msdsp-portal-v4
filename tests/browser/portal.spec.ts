@@ -61,7 +61,7 @@ test("opens and closes mobile workspace navigation", async ({ page }, testInfo) 
   const open = page.getByRole("button", { name: "Open navigation" });
   await open.click();
   await expect(page.getByRole("button", { name: "Close navigation" }).first()).toHaveAttribute("aria-expanded", "true");
-  await page.getByRole("button", { name: "Work Board" }).click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Work Board" }).click();
   await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
 });
 
@@ -134,9 +134,42 @@ test("renders progression ribbon, expands quest points, and opens student guide 
   await expect(page.getByText("Academic Result (82.4%)")).toBeVisible();
   await expect(page.getByText("Attendance (DUK@360 ERP)")).toBeVisible();
 
+  // Switch to Tab 4: Dashboard vs Work Board
+  await page.getByRole("tab", { name: /4\. Dashboard vs Work Board/ }).click();
+  await expect(page.getByText("Your Strategic Command Center (Cockpit)")).toBeVisible();
+  await expect(page.getByText("Your Engineering Execution Workbench (Studio)")).toBeVisible();
+  await expect(page.getByText("The 4-Step Assignment Cycle:")).toBeVisible();
+
   // Close modal via Escape
   await page.keyboard.press("Escape");
   await expect(guideModal).toBeHidden();
+});
+
+test("demystifies Work Board connection to Dashboard and supports cross-navigation", async ({ page }) => {
+  await openPortal(page);
+
+  // 1. Verify Work Board helper banner on Focused Dashboard
+  await expect(page.getByText("Connected to your Work Board")).toBeVisible();
+  await expect(page.getByText("These sprint tasks represent assignments on your Work Board.")).toBeVisible();
+
+  // 2. Click "Execute on Work Board" from urgent hero card
+  const heroWbBtn = page.getByRole("button", { name: "Execute on Work Board" });
+  await expect(heroWbBtn).toBeVisible();
+  await heroWbBtn.click();
+
+  // 3. Verify landing on Work Board with the new student onboarding card
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+  await expect(page.getByText("NEW STUDENT REFERENCE · WORK BOARD WORKFLOW")).toBeVisible();
+  await expect(page.getByText("Your Engineering Execution Workbench")).toBeVisible();
+  await expect(page.getByText("1. Read Brief")).toBeVisible();
+  await expect(page.getByText("4. Submit for Review")).toBeVisible();
+
+  // 4. Return to Dashboard Overview via the back button
+  const returnBtn = page.getByRole("button", { name: "Return to Dashboard Overview" });
+  await expect(returnBtn).toBeVisible();
+  await returnBtn.click();
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Overview");
+  await expect(page.getByText("TEAM NORTHSTAR · COHORT COLLABORATION")).toBeVisible();
 });
 
 test("supports collapsing sidebar into icons-only mode and restoring it", async ({ page }, testInfo) => {
@@ -169,7 +202,7 @@ test("supports collapsing sidebar into icons-only mode and restoring it", async 
   expect(collapsedViolations).toEqual([]);
 
   // Verify navigation buttons still work and show icons
-  const workBoardNav = page.getByRole("button", { name: "Work Board" });
+  const workBoardNav = page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Work Board" });
   await expect(workBoardNav).toBeVisible();
   await workBoardNav.click();
   await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");

@@ -13,7 +13,7 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
   const titleId = useId();
   const descriptionId = useId();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"hierarchy" | "acronyms" | "scores">("hierarchy");
+  const [activeTab, setActiveTab] = useState<"hierarchy" | "acronyms" | "scores" | "workboard">("hierarchy");
 
   useEffect(() => {
     setMounted(true);
@@ -108,6 +108,15 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
             onClick={() => setActiveTab("scores")}
           >
             <Icon name="award" /> 3. Scores vs Attendance
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "workboard"}
+            className={activeTab === "workboard" ? "active" : ""}
+            onClick={() => setActiveTab("workboard")}
+          >
+            <Icon name="brief" /> 4. Dashboard vs Work Board
           </button>
         </div>
 
@@ -301,6 +310,79 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
                     <li>No attendance points exist in this dashboard</li>
                   </ul>
                   <small className="v2-score-tag">Governed strictly outside this portal</small>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4: Dashboard vs Work Board */}
+          {activeTab === "workboard" && (
+            <div className="v2-guide-content" tabIndex={0} role="tabpanel" aria-label="Dashboard vs Work Board">
+              <p className="v2-guide-explainer">
+                How does your <strong>Overview Dashboard</strong> relate to the <strong>Work Board</strong>? They form a two-part loop:
+              </p>
+
+              <div className="v2-comparison-grid">
+                <div className="v2-comparison-card dashboard">
+                  <div className="v2-comp-head">
+                    <Icon name="grid" />
+                    <div>
+                      <b>Dashboard (Overview)</b>
+                      <small>Your Strategic Command Center (Cockpit)</small>
+                    </div>
+                  </div>
+                  <p><strong>Answers:</strong> “What should I work on today? How is my team doing? What are my points?”</p>
+                  <ul>
+                    <li><strong>Sprint & Level status:</strong> Level 9, Sprint 04 timeline & progress.</li>
+                    <li><strong>Urgent focus:</strong> Highlights blockers, failing scenarios, and upcoming deadlines.</li>
+                    <li><strong>Points & Scores:</strong> 82.4% Academic GPA mark & 780 Quest points ledger.</li>
+                    <li><strong>Team Northstar:</strong> Pod members' current status and blockers.</li>
+                  </ul>
+                  <span className="v2-comp-badge">Tells you WHAT to do next</span>
+                </div>
+
+                <div className="v2-comparison-card workboard">
+                  <div className="v2-comp-head">
+                    <Icon name="brief" />
+                    <div>
+                      <b>Work Board</b>
+                      <small>Your Engineering Execution Workbench (Studio)</small>
+                    </div>
+                  </div>
+                  <p><strong>Answers:</strong> “What are the exact specs? What rubrics will I be graded on? Where do I upload my deliverables?”</p>
+                  <ul>
+                    <li><strong>Client Brief:</strong> Full technical problem statement, constraints & PO mappings.</li>
+                    <li><strong>Rubric Criteria:</strong> Explicit standards (Needs Revision vs Meets Standard vs Exceeds).</li>
+                    <li><strong>Artifacts Management:</strong> Attach OpenAPI specs, GitHub PRs, PostgreSQL migrations, Playwright traces.</li>
+                    <li><strong>Submit for Review:</strong> Formal submission gate to notify faculty coordinators.</li>
+                  </ul>
+                  <span className="v2-comp-badge accent">Where you DO and SUBMIT the work</span>
+                </div>
+              </div>
+
+              <div className="v2-lifecycle-flow">
+                <b>The 4-Step Assignment Cycle:</b>
+                <div className="v2-flow-steps">
+                  <div className="v2-flow-step">
+                    <span>1</span>
+                    <b>Dashboard Alert</b>
+                    <p>Dashboard flags an active or revision-needed task (e.g. DS-907).</p>
+                  </div>
+                  <div className="v2-flow-step">
+                    <span>2</span>
+                    <b>Work Board Brief</b>
+                    <p>Read client specifications and check evaluation rubric criteria.</p>
+                  </div>
+                  <div className="v2-flow-step">
+                    <span>3</span>
+                    <b>Attach Artifacts</b>
+                    <p>Link your PR, test traces, or schema migration files.</p>
+                  </div>
+                  <div className="v2-flow-step">
+                    <span>4</span>
+                    <b>Faculty Sign-Off</b>
+                    <p>Submit for review; accepted work awards Level points on Dashboard!</p>
+                  </div>
                 </div>
               </div>
             </div>
