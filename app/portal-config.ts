@@ -31,13 +31,15 @@ export const prototypeCohort = ["Alfin", "Anakha Rajesh", "Annamma", "Annrosna",
 
 export const workspaceNavigation = {
   student: ["Overview", "Work Board", "Evidence & Portfolio", "Skills & Outcomes", "Faculty Feedback", "Calendar", "Performance & Results", "Information Centre"],
-  courseHead: ["Overview", "Course Details", "Programme Workflow", "Course Coordination", "Learning Cycle Planning", "Assignment Management", "Student Monitor", "Activity Review", "Academic Evaluation", "Reports & Analytics"],
-  mentor: ["Overview", "My Allocations", "Learners & Teams", "Sprint Workspace", "Evidence Review", "Mentoring Records", "Competency & Calibration", "Escalations", "Recommendation Tracker", "Calendar", "Course Details"],
+  courseHead: ["Overview", "Workshop", "Course Coordination", "Learning Cycle Planning", "Assignment Management", "Student Monitor", "Activity Review", "Academic Evaluation", "Reports & Analytics"],
+  mentor: ["Overview", "My Allocations", "Learners & Teams", "Sprint Workspace", "Evidence Review", "Mentoring Records", "Competency & Calibration", "Escalations", "Recommendation Tracker", "Calendar"],
 } as const;
 
 export const workspaceIcons: Record<string, string> = {
   Overview: "grid",
+  Workshop: "code",
   "Course Details": "book",
+  "Full Stack Development": "layers",
   "Programme Workflow": "network",
   "Course Coordination": "network",
   "Work Board": "brief",

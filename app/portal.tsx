@@ -3,7 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { EvidenceModal } from "./components/evidence-modal";
 import { FilterBar, Icon, Metric, PageHeader, PanelHeading, ScoreRow } from "./components/portal-primitives";
+import { FullStackPage } from "./components/full-stack-page";
 import { StudentDashboardV2 } from "./components/student-dashboard-v2";
+import { WorkshopHub } from "./components/workshop-hub";
 import { coordinators, levelCoordination, semesterCoordination } from "./coordination-data";
 import { academicComponents, cycles, levelNinePoints, programmeRules, prototypeCohort, sprintData, workspaceIcons, workspaceNavigation, type Cycle, type MentorKind, type Role, type Theme } from "./portal-config";
 
@@ -178,6 +180,10 @@ export default function Portal() {
 function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode, onNavigate, selectedAssignmentId, setSelectedAssignmentId }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void; onNavigate: (page: string, assignmentId?: string) => void; selectedAssignmentId: string; setSelectedAssignmentId: (id: string) => void }) {
   if (page === "Work Board") return <Workboard openEvidence={() => openEvidence(selectedAssignmentId)} notify={notify} onNavigate={onNavigate} selectedAssignmentId={selectedAssignmentId} onSelectAssignment={setSelectedAssignmentId} />;
   if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} onNavigate={onNavigate} />;
+  if (page === "Workshop") return <WorkshopHub role="student" notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Full Stack Development") return <WorkshopHub role="student" initialTab="fullstack" notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Course Details") return <WorkshopHub role="student" initialTab="courseDetails" notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Programme Workflow") return <WorkshopHub role="student" initialTab="workflow" notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
   if (page === "Skills & Outcomes") return <OutcomesPage notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} />;
   if (page === "Faculty Feedback") return <FeedbackPage notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} selectedAssignmentId={selectedAssignmentId} onSelectAssignment={setSelectedAssignmentId} />;
   if (page === "Calendar") return <StudentCalendar notify={notify} onNavigate={onNavigate} />;
@@ -2629,7 +2635,8 @@ function MentorWorkspace({ page, cycle, mentorKind, notify }: { page: string; cy
   if (page === "Escalations") return <MentorEscalations cycle={cycle} mentorKind={mentorKind} notify={notify} />;
   if (page === "Recommendation Tracker") return <MentorRecommendationPage cycle={cycle} mentorKind={mentorKind} notify={notify} />;
   if (page === "Calendar") return <MentorCalendar cycle={cycle} mentorKind={mentorKind} notify={notify} />;
-  if (page === "Course Details") return <CourseDetails notify={notify} />;
+  if (page === "Workshop") return <WorkshopHub role="mentor" notify={notify} onNavigate={(p) => notify(`Navigate to ${p}`)} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Course Details") return <WorkshopHub role="mentor" initialTab="courseDetails" notify={notify} onNavigate={(p) => notify(`Navigate to ${p}`)} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
   return <MentorOverview cycle={cycle} mentorKind={mentorKind} notify={notify} />;
 }
 
@@ -2745,8 +2752,10 @@ function MentorCalendar({ cycle, mentorKind, notify }: { cycle: Cycle; mentorKin
 }
 
 function FacultyWorkspace({ page, cycle, notify }: { page: string; cycle: Cycle; notify: (message: string) => void }) {
-  if (page === "Course Details") return <CourseDetails notify={notify} />;
-  if (page === "Programme Workflow") return <ProgrammeWorkflow notify={notify} />;
+  if (page === "Workshop") return <WorkshopHub role="courseHead" notify={notify} onNavigate={(p) => notify(`Navigate to ${p}`)} openEvidence={(asg) => notify(`Evidence for ${asg ?? "Full Stack"} opened`)} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Course Details") return <WorkshopHub role="courseHead" initialTab="courseDetails" notify={notify} onNavigate={(p) => notify(`Navigate to ${p}`)} openEvidence={(asg) => notify(`Evidence for ${asg ?? "Full Stack"} opened`)} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Full Stack Development") return <WorkshopHub role="courseHead" initialTab="fullstack" notify={notify} onNavigate={(p) => notify(`Navigate to ${p}`)} openEvidence={(asg) => notify(`Evidence for ${asg ?? "Full Stack"} opened`)} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
+  if (page === "Programme Workflow") return <WorkshopHub role="courseHead" initialTab="workflow" notify={notify} onNavigate={(p) => notify(`Navigate to ${p}`)} openEvidence={(asg) => notify(`Evidence for ${asg ?? "Full Stack"} opened`)} renderCourseDetails={() => <CourseDetails notify={notify} />} renderWorkflow={() => <ProgrammeWorkflow notify={notify} />} />;
   if (page === "Course Coordination") return <CourseCoordination notify={notify} />;
   if (page === "Learning Cycle Planning") return <CyclePlanning cycle={cycle} notify={notify} />;
   if (page === "Assignment Management") return <AssignmentStudio notify={notify} />;

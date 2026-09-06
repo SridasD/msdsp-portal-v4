@@ -17,7 +17,7 @@ test("switches between governed workspaces", async ({ page }) => {
 
   await page.getByRole("button", { name: "Course Head", exact: true }).click();
   await expect(workspace).toHaveAttribute("aria-label", "Course Head workspace: Overview");
-  await expect(page.getByRole("navigation", { name: "Workspace navigation" })).toContainText("Course Details");
+  await expect(page.getByRole("navigation", { name: "Workspace navigation" })).toContainText("Workshop");
 
   if (await mobileMenu.isVisible()) await mobileMenu.click();
   await page.getByRole("button", { name: "Mentor", exact: true }).click();
@@ -437,11 +437,14 @@ test("renders enhanced Programme Workflow with 9 interactive Mermaid flowcharts"
   if (await mobileMenu.isVisible()) await mobileMenu.click();
   await page.getByRole("button", { name: "Course Head", exact: true }).click();
 
-  // Navigate to Programme Workflow
+  // Navigate to Workshop then Programme Workflow tab
   if (await mobileMenu.isVisible()) await mobileMenu.click();
-  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Programme Workflow" }).click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Workshop" }).click();
 
-  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Course Head workspace: Programme Workflow");
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Course Head workspace: Workshop");
+
+  // Switch to Programme Workflow tab
+  await page.getByRole("tab", { name: "Programme Workflow" }).click();
 
   // Verify Mermaid Gallery heading and 9 diagrams metadata
   await expect(page.getByText("MERMAID REFERENCE DIAGRAMS")).toBeVisible();

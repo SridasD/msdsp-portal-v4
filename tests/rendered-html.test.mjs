@@ -150,8 +150,13 @@ test("keeps workspace information architecture in governed configuration", async
   const config = await readFile(new URL("../app/portal-config.ts", import.meta.url), "utf8");
   assert.match(config, /student:[\s\S]*"Information Centre"/);
   assert.doesNotMatch(config, /student:[^\n]*"Course Details"/);
-  assert.match(config, /courseHead:[^\n]*"Course Details"/);
-  assert.match(config, /mentor:[^\n]*"Course Details"/);
+  assert.doesNotMatch(config, /courseHead:[^\n]*"Course Details"/);
+  assert.doesNotMatch(config, /mentor:[^\n]*"Course Details"/);
+  assert.doesNotMatch(config, /courseHead:[^\n]*"Programme Workflow"/);
+  assert.doesNotMatch(config, /student:[^\n]*"Full Stack Development"/);
+  assert.doesNotMatch(config, /student:[^\n]*"Workshop"/);
+  assert.match(config, /courseHead:[^\n]*"Workshop"/);
+  assert.doesNotMatch(config, /mentor:[^\n]*"Workshop"/);
   assert.match(config, /prototypeCohort/);
   assert.match(config, /workspaceIcons/);
   assert.match(config, /sprintData/);
