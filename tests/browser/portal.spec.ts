@@ -139,3 +139,45 @@ test("renders progression ribbon, expands quest points, and opens student guide 
   await expect(guideModal).toBeHidden();
 });
 
+test("supports collapsing sidebar into icons-only mode and restoring it", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.startsWith("mobile"), "Sidebar icon rail toggle is desktop-specific.");
+  await openPortal(page);
+
+  const sidebar = page.locator("aside.sidebar");
+  await expect(sidebar).toBeVisible();
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+
+  // 1. Locate collapse toggle button
+  const toggleBtn = page.getByRole("button", { name: "Collapse sidebar to icons only" });
+  await expect(toggleBtn).toBeVisible();
+  await expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+
+  // 2. Click to collapse into icons-only mode
+  await toggleBtn.click();
+  await expect(sidebar).toHaveClass(/collapsed/);
+  await expect(page.locator("main.app-shell")).toHaveClass(/sidebar-collapsed/);
+  await expect(page.getByRole("button", { name: "Expand sidebar navigation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Expand sidebar navigation" })).toHaveAttribute("aria-expanded", "false");
+
+  // Verify no accessibility violations while collapsed
+  const collapsedAxe = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  const collapsedViolations = collapsedAxe.violations
+    .filter(({ impact }) => impact === "serious" || impact === "critical")
+    .map(({ id, nodes }) => ({ id, targets: nodes.map(({ target }) => target.join(" ")) }));
+  expect(collapsedViolations).toEqual([]);
+
+  // Verify navigation buttons still work and show icons
+  const workBoardNav = page.getByRole("button", { name: "Work Board" });
+  await expect(workBoardNav).toBeVisible();
+  await workBoardNav.click();
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+
+  // 3. Expand sidebar back
+  const expandBtn = page.getByRole("button", { name: "Expand sidebar navigation" });
+  await expandBtn.click();
+  await expect(sidebar).not.toHaveClass(/collapsed/);
+  await expect(page.getByText("Collapse sidebar")).toBeVisible();
+});
+

@@ -19,6 +19,7 @@ export default function Portal() {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [evidenceAssignment, setEvidenceAssignment] = useState<string | undefined>();
   const [studentDashboardMode, setStudentDashboardMode] = useState<"v2" | "classic">("classic");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const appShellRef = useRef<HTMLElement>(null);
@@ -35,8 +36,10 @@ export default function Portal() {
       const storedTheme = localStorage.getItem("msdsp-theme") as Theme | null;
       const storedCycle = localStorage.getItem("msdsp-cycle");
       const storedMode = localStorage.getItem("msdsp-student-dashboard-mode") as "v2" | "classic" | null;
+      const storedSidebar = localStorage.getItem("msdsp-sidebar-collapsed");
       if (storedTheme) setTheme(storedTheme);
       if (storedCycle && cycles.some((item) => item.id === storedCycle)) setCycleId(storedCycle);
+      if (storedSidebar === "true") setSidebarCollapsed(true);
       if (storedMode) {
         setStudentDashboardMode(storedMode);
       } else {
@@ -88,8 +91,14 @@ export default function Portal() {
     localStorage.setItem("msdsp-student-dashboard-mode", mode);
     notify(mode === "v2" ? "Focused Dashboard (v2) activated" : "Classic Overview activated");
   };
+  const handleToggleSidebar = () => {
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    localStorage.setItem("msdsp-sidebar-collapsed", String(next));
+    notify(next ? "Sidebar collapsed (icons only)" : "Sidebar expanded");
+  };
 
-  return <main ref={appShellRef} className="app-shell" data-hydrated="false">
+  return <main ref={appShellRef} className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`} data-hydrated="false">
     <a className="skip-link" href="#workspace" onClick={focusWorkspace}>Skip to workspace</a>
     <header className="topbar">
       <button type="button" className="mobile-menu" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} aria-controls="primary-navigation" onClick={() => setMobileOpen(!mobileOpen)}><Icon name="menu" /></button>
@@ -100,14 +109,64 @@ export default function Portal() {
       <div ref={profileMenuRef} className="profile-wrap"><button className="profile" aria-haspopup="menu" aria-controls="profile-menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)}><span>{roleProfile.initials}</span><div><b>{roleProfile.name}</b><small>{roleProfile.title}</small></div><Icon name="chevron" /></button>{profileOpen && <div id="profile-menu" role="menu" className="popover profile-menu"><p>Appearance</p><div className="theme-options">{(["light", "dark", "system"] as Theme[]).map((item) => <button role="menuitemradio" aria-checked={theme === item} key={item} className={theme === item ? "selected" : ""} onClick={() => { setTheme(item); setProfileOpen(false); }}>{item}</button>)}</div><button role="menuitem" onClick={() => notify("Profile opened")}><Icon name="user" />Profile & preferences</button></div>}</div>
     </header>
 
-    <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
-      <div className="role-switch" role="group" aria-label="Prototype role"><button type="button" aria-pressed={role === "student"} className={role === "student" ? "active" : ""} onClick={() => changeRole("student")}>Student</button><button type="button" aria-pressed={role === "courseHead"} className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")}>Course Head</button><button type="button" aria-pressed={role === "mentor"} className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")}>Mentor</button></div>
-      {role === "mentor" && <div className="mentor-persona-switch" aria-label="Mentor responsibility"><span>MENTOR RESPONSIBILITY</span><div><button className={mentorKind === "domain" ? "active" : ""} onClick={() => { setMentorKind("domain"); setPage("Overview"); }}>Domain Mentor</button><button className={mentorKind === "team" ? "active" : ""} onClick={() => { setMentorKind("team"); setPage("Overview"); }}>Team Mentor</button></div></div>}
+    <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`} aria-label="Sidebar navigation">
+      <div className="role-switch" role="group" aria-label="Prototype role">
+        <button type="button" aria-pressed={role === "student"} className={role === "student" ? "active" : ""} onClick={() => changeRole("student")} title="Student Workspace">
+          <span className="role-full">Student</span>
+          <span className="role-short" aria-hidden="true">S</span>
+        </button>
+        <button type="button" aria-pressed={role === "courseHead"} className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")} title="Course Head Workspace">
+          <span className="role-full">Course Head</span>
+          <span className="role-short" aria-hidden="true">CH</span>
+        </button>
+        <button type="button" aria-pressed={role === "mentor"} className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")} title="Mentor Workspace">
+          <span className="role-full">Mentor</span>
+          <span className="role-short" aria-hidden="true">M</span>
+        </button>
+      </div>
+      {role === "mentor" && !sidebarCollapsed && <div className="mentor-persona-switch" aria-label="Mentor responsibility"><span>MENTOR RESPONSIBILITY</span><div><button className={mentorKind === "domain" ? "active" : ""} onClick={() => { setMentorKind("domain"); setPage("Overview"); }}>Domain Mentor</button><button className={mentorKind === "team" ? "active" : ""} onClick={() => { setMentorKind("team"); setPage("Overview"); }}>Team Mentor</button></div></div>}
       <p className="nav-label">{role === "student" ? "LEARNING WORKSPACE" : role === "courseHead" ? "COURSE HEAD WORKSPACE" : "MENTOR WORKSPACE"}</p>
-      <nav id="primary-navigation" aria-label="Workspace navigation">{navItems.map((item) => <button type="button" key={item} aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => changePage(item)}><Icon name={workspaceIcons[item] ?? "grid"} />{item}{item === "Activity Review" && <em aria-label="14 items">14</em>}</button>)}</nav>
-      <div className="cycle-mini"><div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div><b>{cycle.id} · Official Level {cycle.level}</b><p>{cycle.title}</p><div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div></div>
-      <div className="attendance-note"><Icon name="shield" /><div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div></div>
-      <small className="prototype-label"><i /> Interactive academic prototype</small>
+      <nav id="primary-navigation" aria-label="Workspace navigation">
+        {navItems.map((item) => (
+          <button
+            type="button"
+            key={item}
+            aria-current={page === item ? "page" : undefined}
+            className={page === item ? "active" : ""}
+            onClick={() => changePage(item)}
+            title={item}
+          >
+            <Icon name={workspaceIcons[item] ?? "grid"} />
+            <span className="nav-text">{item}</span>
+            {item === "Activity Review" && <em aria-label="14 items">14</em>}
+          </button>
+        ))}
+      </nav>
+
+      {/* Sidebar Collapse Toggle Button */}
+      <button
+        type="button"
+        className="sidebar-collapse-toggle"
+        aria-label={sidebarCollapsed ? "Expand sidebar navigation" : "Collapse sidebar to icons only"}
+        aria-expanded={!sidebarCollapsed}
+        title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar to icons only"}
+        onClick={handleToggleSidebar}
+      >
+        <Icon name="chevron" />
+        <span className="collapse-text">{sidebarCollapsed ? "" : "Collapse sidebar"}</span>
+      </button>
+
+      <div className="cycle-mini" title={sidebarCollapsed ? `${cycle.id} · Level ${cycle.level} (${cycle.progress}%)` : undefined}>
+        <div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div>
+        <b>{cycle.id} · Official Level {cycle.level}</b>
+        <p>{cycle.title}</p>
+        <div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div>
+      </div>
+      <div className="attendance-note" title={sidebarCollapsed ? "Attendance is external in DUK@360" : undefined}>
+        <Icon name="shield" />
+        <div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div>
+      </div>
+      <small className="prototype-label" title={sidebarCollapsed ? "Interactive academic prototype" : undefined}><i /> <span className="prototype-text">Interactive academic prototype</span></small>
     </aside>
     {mobileOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
 
