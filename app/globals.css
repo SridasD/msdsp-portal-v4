@@ -4272,6 +4272,710 @@ code {
   color: #fff;
 }
 
+/* ==========================================================================
+   Four Student Modules Suite Styles: Outcomes, Feedback, Calendar, Performance
+   ========================================================================== */
+
+/* 1. Skills & Outcomes Module */
+.outcomes-demystifier-card {
+  border-left: 4px solid var(--teal);
+  background: color-mix(in srgb, var(--teal) 5%, var(--surface));
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.outcomes-demystifier-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.outcomes-demystifier-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--teal) 15%, transparent);
+  color: var(--teal-dark);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.outcomes-demystifier-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.outcomes-triad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.outcome-triad-item {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+}
+.outcome-triad-item b {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.outcome-triad-item p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.triad-item-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+.triad-item-badge.core {
+  background: var(--indigo-subtle);
+  color: var(--indigo-dark);
+}
+.triad-item-badge.spec {
+  background: var(--teal-subtle);
+  color: var(--teal-dark);
+}
+.triad-item-badge.audit {
+  background: var(--emerald-subtle);
+  color: var(--emerald-dark);
+}
+
+.outcomes-controls-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 16px;
+  margin: 16px 0;
+}
+.outcomes-progress-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.outcomes-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.outcomes-progress-info b {
+  color: var(--text);
+}
+.outcomes-progress-info span {
+  color: var(--rose-dark);
+  font-weight: 600;
+  font-size: 11px;
+}
+.outcomes-progress-track {
+  height: 7px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.outcomes-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--indigo));
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+.outcomes-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+.outcomes-filter-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.outcome-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.outcome-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.outcome-code-tag {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  color: var(--text);
+}
+.outcome-category-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.outcome-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-subtle);
+}
+.outcome-source-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.outcome-action-btn {
+  font-size: 11px;
+  font-weight: 750;
+  padding: 6px 12px;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+.outcome-action-btn.fix-gap {
+  background: var(--rose-subtle);
+  color: var(--rose-dark);
+  border: 1px solid color-mix(in srgb, var(--rose) 40%, var(--line));
+}
+.outcome-action-btn.fix-gap:hover {
+  background: var(--rose);
+  color: #fff;
+}
+.outcome-action-btn.view-portfolio {
+  background: var(--violet-subtle);
+  color: var(--violet-dark);
+  border: 1px solid color-mix(in srgb, var(--violet) 40%, var(--line));
+}
+.outcome-action-btn.view-portfolio:hover {
+  background: var(--violet);
+  color: #fff;
+}
+.outcome-action-btn.view-board {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.outcome-action-btn.view-board:hover {
+  background: var(--surface-3);
+  color: var(--indigo-dark);
+}
+
+/* 2. Faculty Feedback Module */
+.feedback-assignment-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.feedback-tab-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all .2s ease;
+}
+.feedback-tab-card:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+.feedback-tab-card.active {
+  border-color: var(--indigo);
+  background: color-mix(in srgb, var(--indigo) 6%, var(--surface));
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.fb-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.fb-tab-header b {
+  font-size: 13px;
+  color: var(--text);
+}
+.fb-tab-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 4px 0 2px;
+}
+.fb-tab-reviewer {
+  font-size: 11px;
+  color: var(--muted);
+}
+.revision-checklist-wrap {
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.revision-checklist-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.revision-checklist-bar {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.revision-checklist-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--emerald), var(--teal));
+  transition: width .3s ease;
+}
+.revision-checklist label.checked span {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.secondary-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  font-weight: 650;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all .18s ease;
+}
+.secondary-btn:hover {
+  background: var(--surface-3);
+  color: var(--indigo-dark);
+}
+
+/* 3. Student Calendar Module */
+.calendar-clarification-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--indigo) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--indigo) 25%, var(--line));
+  border-radius: var(--radius-panel);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.calendar-clarification-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--indigo) 15%, transparent);
+  color: var(--indigo);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.calendar-clarification-card b {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.calendar-clarification-card p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.calendar-sprint-strip {
+  margin-bottom: 16px;
+  padding: 14px 18px;
+}
+.calendar-sprint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.calendar-sprint-header b {
+  color: var(--teal-dark);
+}
+.calendar-sprint-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+.sprint-segment {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+.sprint-segment.done {
+  opacity: 0.75;
+  background: var(--surface);
+}
+.sprint-segment.current {
+  border-color: var(--teal);
+  background: color-mix(in srgb, var(--teal) 10%, var(--surface));
+  box-shadow: 0 0 0 1px var(--teal);
+}
+.sprint-segment.current b {
+  color: var(--teal-dark);
+}
+.sprint-segment.upcoming {
+  opacity: 0.55;
+}
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  display: inline-block;
+  margin-right: 4px;
+  animation: pulse 2s infinite ease-in-out;
+}
+.calendar-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.calendar-day-btn.selected-day {
+  outline: 2px solid var(--indigo) !important;
+  background: var(--surface-3) !important;
+}
+.calendar-legend .review-dot {
+  background: var(--violet);
+}
+.calendar-day-drawer {
+  margin-top: 16px;
+  padding: 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+}
+.day-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.day-drawer-header h3 {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: var(--text);
+}
+.day-event-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text);
+}
+.day-empty-state {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.day-empty-state p {
+  margin-bottom: 10px;
+}
+.day-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.day-event-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+}
+.day-event-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.day-event-cat-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.day-event-cat-badge.official {
+  background: var(--rose-subtle);
+  color: var(--rose-dark);
+}
+.day-event-cat-badge.review {
+  background: var(--violet-subtle);
+  color: var(--violet-dark);
+}
+.day-event-cat-badge.sprint {
+  background: var(--teal-subtle);
+  color: var(--teal-dark);
+}
+.day-event-cat-badge.certification {
+  background: var(--amber-subtle);
+  color: var(--amber-dark);
+}
+.day-event-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.day-event-card h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+.day-event-card p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.day-event-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0 10px;
+}
+.day-event-actions {
+  display: flex;
+  gap: 8px;
+}
+.primary-button.compact {
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+/* 4. Performance & Results Module */
+.scores-demystifier-card {
+  border-left: 4px solid var(--indigo);
+  background: color-mix(in srgb, var(--indigo) 5%, var(--surface));
+  padding: 16px 20px;
+  margin-bottom: 18px;
+}
+.scores-demystifier-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.scores-demystifier-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--indigo) 15%, transparent);
+  color: var(--indigo);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.scores-demystifier-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.scores-triad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.scores-triad-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 14px;
+}
+.scores-triad-item.official {
+  border-top: 3px solid var(--indigo);
+}
+.scores-triad-item.gamification {
+  border-top: 3px solid var(--amber);
+}
+.scores-triad-item.certification {
+  border-top: 3px solid var(--teal);
+}
+.scores-triad-item b {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.scores-triad-item p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.what-if-simulator-card {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+.simulator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.sim-title-wrap h3 {
+  margin: 2px 0 4px;
+  font-size: 16px;
+  color: var(--text);
+}
+.sim-title-wrap p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.sim-score-badges {
+  display: flex;
+  gap: 10px;
+}
+.sim-score-box {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 8px 14px;
+  text-align: center;
+  min-width: 130px;
+}
+.sim-score-box small {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.sim-score-box b {
+  font-size: 16px;
+  color: var(--text);
+}
+.sim-score-box b.projected {
+  color: var(--emerald-dark) !important;
+}
+.sim-score-box span {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.simulator-toggles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.sim-toggle-pill {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all .18s ease;
+}
+.sim-toggle-pill:hover {
+  border-color: var(--line-strong);
+}
+.sim-toggle-pill.active {
+  border-color: var(--emerald);
+  background: color-mix(in srgb, var(--emerald) 10%, var(--surface));
+}
+.sim-toggle-pill input {
+  margin-top: 3px;
+}
+.sim-toggle-pill b {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
+}
+.sim-toggle-pill small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.distinction-unlocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--amber) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--amber) 40%, var(--line));
+  color: var(--text);
+}
+.distinction-unlocked-banner svg {
+  width: 24px;
+  height: 24px;
+  color: var(--amber-dark);
+  flex-shrink: 0;
+}
+.distinction-unlocked-banner b {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+}
+.distinction-unlocked-banner p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+.calc-source-pill {
+  font-size: 11px;
+}
+.calc-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--indigo-dark);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0;
+}
+.calc-link-btn:hover {
+  color: var(--indigo);
+}
+.current-ladder {
+  border-color: var(--indigo) !important;
+  background: color-mix(in srgb, var(--indigo) 15%, var(--surface-2)) !important;
+}
+
 @media (max-width: 900px) {
   .v2-comparison-grid {
     grid-template-columns: 1fr;

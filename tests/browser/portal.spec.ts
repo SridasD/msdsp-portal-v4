@@ -254,3 +254,181 @@ test("supports collapsing sidebar into icons-only mode and restoring it", async 
   await expect(page.getByText("Collapse sidebar")).toBeVisible();
 });
 
+test("demystifies Skills & Outcomes (PO vs PSO), filters competencies, and jumps to Work Board remediation", async ({ page }) => {
+  await openPortal(page);
+
+  const mobileMenu = page.getByRole("button", { name: "Open navigation" });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Skills & Outcomes" }).click();
+
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Skills & Outcomes");
+
+  // 1. Verify PO vs PSO Demystifier Card
+  await expect(page.getByText("UNDERSTANDING OUTCOMES · LEVEL 9")).toBeVisible();
+  await expect(page.getByText("How Your Code Maps to Degree Competencies")).toBeVisible();
+  await expect(page.getByText("PO1–PO8")).toBeVisible();
+  await expect(page.getByText("Programme Outcomes", { exact: true })).toBeVisible();
+  await expect(page.getByText("PSO1–PSO4")).toBeVisible();
+  await expect(page.getByText("Specialized Outcomes", { exact: true })).toBeVisible();
+  await expect(page.getByText("Level 9 Active Coverage: 4 / 6 Competencies Addressed (67%)")).toBeVisible();
+
+  // 2. Filter by Core POs
+  await page.getByRole("button", { name: "Core POs (4)" }).click();
+  await expect(page.getByRole("heading", { name: "Delivery Automation & QA" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Distributed Transaction Resilience" })).toBeHidden();
+
+  // 3. Filter by Specialized PSOs
+  await page.getByRole("button", { name: "Specialized PSOs (2)" }).click();
+  await expect(page.getByRole("heading", { name: "Distributed Transaction Resilience" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Delivery Automation & QA" })).toBeHidden();
+
+  // 4. Filter by Evidence Gaps and jump to Work Board
+  await page.getByRole("button", { name: "Evidence Gaps (2)" }).click();
+  await expect(page.getByRole("heading", { name: "Distributed Transaction Resilience" })).toBeVisible();
+
+  const fixBtn = page.getByRole("button", { name: "Fix on Work Board (DS-907) →" }).first();
+  await expect(fixBtn).toBeVisible();
+  await fixBtn.click({ force: true });
+
+  // Jumps straight to Work Board with DS-907
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+  await expect(page.getByText("SELECTED ASSIGNMENT · DS-907")).toBeVisible();
+});
+
+test("supports multi-ticket critique switching, interactive revision checklist, and review response in Faculty Feedback", async ({ page }) => {
+  await openPortal(page);
+
+  const mobileMenu = page.getByRole("button", { name: "Open navigation" });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Faculty Feedback" }).click();
+
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Faculty Feedback");
+
+  // 1. Check ticket switcher tabs
+  const tab907 = page.getByRole("tab", { name: /DS-907/ });
+  const tab904 = page.getByRole("tab", { name: /DS-904/ });
+  const tab905 = page.getByRole("tab", { name: /DS-905/ });
+  await expect(tab907).toBeVisible();
+  await expect(tab904).toBeVisible();
+  await expect(tab905).toBeVisible();
+
+  // Switch to DS-904
+  await tab904.click();
+  await expect(page.getByText("KRISHNASREE K").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Full-stack integration and test readiness" })).toBeVisible();
+
+  // Switch back to DS-907
+  await tab907.click();
+  await expect(page.getByText("AJITHA V S").first()).toBeVisible();
+  await expect(page.getByText("WHAT IS WORKING")).toBeVisible();
+  await expect(page.getByText("WHAT MUST CHANGE")).toBeVisible();
+  await expect(page.getByText("ACADEMIC PURPOSE")).toBeVisible();
+
+  // 2. Interactive checklist updates
+  await expect(page.getByText("0 of 4 completed (0%)")).toBeVisible();
+  const firstTask = page.getByLabel("Token refresh scenario passes in Chromium and Firefox");
+  await firstTask.check();
+  await expect(page.getByText("1 of 4 completed (25%)")).toBeVisible();
+
+  // 3. Action button: Execute Revision on Work Board
+  const executeBtn = page.getByRole("button", { name: "Execute Revision on Work Board (DS-907)" });
+  await expect(executeBtn).toBeVisible();
+  await executeBtn.click();
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+  await expect(page.getByText("SELECTED ASSIGNMENT · DS-907")).toBeVisible();
+
+  // Navigate back to Faculty Feedback
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Faculty Feedback" }).click();
+
+  // 4. Action button: Upload Evidence / Traces
+  const uploadBtn = page.getByRole("button", { name: "Upload Evidence / Traces" });
+  await expect(uploadBtn).toBeVisible();
+  await uploadBtn.click();
+
+  const dialog = page.getByRole("dialog", { name: "Connect engineering work to an academic claim" });
+  await expect(dialog).toBeVisible();
+  const select = page.getByRole("combobox", { name: "Related assignment" });
+  await expect(select).toHaveValue("DS-907 · End-to-end quality-gate revision");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+});
+
+test("clarifies Calendar vs Attendance boundary, interacts with Sprint Roadmap, and opens Day Details Drawer", async ({ page }) => {
+  await openPortal(page);
+
+  const mobileMenu = page.getByRole("button", { name: "Open navigation" });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Calendar" }).click();
+
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Calendar");
+
+  // 1. Verify Attendance Clarification Card
+  await expect(page.getByText("ACADEMIC WORK PLANNING ONLY")).toBeVisible();
+  await expect(page.getByText("Calendar is for Academic Commitments — Attendance is Managed in DUK@360")).toBeVisible();
+  await expect(page.getByText("DUK@360").first()).toBeVisible();
+
+  // 2. Verify Sprint Roadmap strip
+  await expect(page.getByText("LEVEL 9 · SPRINT PROGRESSION TIMELINE")).toBeVisible();
+  await expect(page.getByText("Active Sprint: Sprint 04 · Verify (01–14 September)")).toBeVisible();
+
+  // 3. Filter pills
+  await page.getByRole("button", { name: "Sprint Work (1)" }).click();
+  await expect(page.getByText("Sprint 04 · Verify checkpoint")).toBeVisible();
+
+  // 4. Click All Events to restore full view and click Day 5
+  await page.getByRole("button", { name: "All Events (7)" }).click();
+  await page.getByRole("button", { name: /5 DS-907 End-to-end quality gate/ }).click();
+
+  await expect(page.getByRole("heading", { name: "5 September 2026" })).toBeVisible();
+  await expect(page.getByText("Ajitha V S (QA Coordinator)")).toBeVisible();
+
+  // Click CTA in drawer to jump to Work Board
+  const drawerCta = page.getByRole("button", { name: "Fix on Work Board (DS-907) →" });
+  await expect(drawerCta).toBeVisible();
+  await drawerCta.click();
+
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+  await expect(page.getByText("SELECTED ASSIGNMENT · DS-907")).toBeVisible();
+});
+
+test("demystifies Performance & Results (Academic GPA vs Quest Points) and simulates progression what-if scenario", async ({ page }) => {
+  await openPortal(page);
+
+  const mobileMenu = page.getByRole("button", { name: "Open navigation" });
+  if (await mobileMenu.isVisible()) await mobileMenu.click();
+  await page.getByRole("navigation", { name: "Workspace navigation" }).getByRole("button", { name: "Performance & Results" }).click();
+
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Performance & Results");
+
+  // 1. Verify Demystifier Card
+  await expect(page.getByText("DEMYSTIFYING YOUR SCORES · LEVEL 9")).toBeVisible();
+  await expect(page.getByText("Understanding Academic Marks vs Quest Points")).toBeVisible();
+  await expect(page.getByText("Official Grade")).toBeVisible();
+  await expect(page.getByText("Academic Result (82.1%)")).toBeVisible();
+  await expect(page.getByText("Sprint Pace")).toBeVisible();
+  await expect(page.getByText("Quest Points (780 / 1000 pts)")).toBeVisible();
+
+  // 2. Interactive Progression Simulator (What-If)
+  await expect(page.getByText("INTERACTIVE PROGRESSION SIMULATOR")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What-If Grade & Points Projector" })).toBeVisible();
+  await expect(page.getByText("780 / 1000", { exact: true })).toBeVisible();
+
+  // Toggle DS-907 (+30 pts)
+  await page.getByLabel(/Fix DS-907 Quality Gate/).check();
+  await expect(page.getByText("810 / 1000", { exact: true })).toBeVisible();
+
+  // Toggle Live Demo (+80 pts)
+  await page.getByLabel(/Score 90% on Live Demonstration/).check();
+  await expect(page.getByText("890 / 1000", { exact: true })).toBeVisible();
+  await expect(page.getByText("Distinction Pace ⭐")).toBeVisible();
+  await expect(page.getByText("🎉 Distinction Band Projection Unlocked! (890 / 1000 pts)")).toBeVisible();
+
+  // 3. Verify Course Plan Component Table with Assignment buttons
+  await expect(page.getByRole("button", { name: "DS-904 Full-Stack Capstone & PR-42 →" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "DS-905 API & DS-907 Quality Gate →" })).toBeVisible();
+});
+
+
+
+
