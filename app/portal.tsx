@@ -276,16 +276,27 @@ function CourseDetails({ notify }: { notify: (message: string) => void }) {
 }
 
 const mermaidCharts = [
-  { id: "structure", label: "Programme structure", title: "Programme to evidence", source: `flowchart TD
-    P["MSDSP Programme"] --> S["4 Semesters"]
-    S --> L["20 Learning Cycles / Levels"]
-    L --> SP["Normally 5 Sprints"]
-    SP --> A["Assignments and workplace tasks"]
-    A --> E["Deliverables, evidence and review"]
-    S --> C["Academic courses"]
-    C --> U["Course units"]
-    U --> A
-    C --> CR["Approved course credits"]
+  {
+    id: "structure",
+    label: "Programme structure",
+    title: "Programme to evidence",
+    source: `flowchart TD
+    subgraph Delivery ["Agile Delivery Architecture"]
+      P["MSDSP Master Programme"] --> S["4 Semesters"]
+      S --> L["20 Learning Cycles / Levels"]
+      L --> SP["5 Weekly Sprints per Level"]
+      SP --> A["Assignments and Workplace Tasks"]
+    end
+    subgraph Academic ["Academic Curriculum Framework"]
+      C["Academic Courses"] --> U["Course Units"]
+      U --> A
+      C --> CR["Approved Course Credits"]
+    end
+    subgraph Evidence ["Verifiable Proof & Outcomes"]
+      A --> E["Deliverables & Evidence Artifacts"]
+      E --> PO["PO1–PO8 & PSO1–PSO4 Mappings"]
+      E --> CR
+    end
     classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
     classDef academic fill:#DFE7FF,color:#16244C,stroke:#5269D6,stroke-width:1.5px
     classDef student fill:#FFF0CF,color:#4D3410,stroke:#C88922,stroke-width:1.5px
@@ -293,15 +304,26 @@ const mermaidCharts = [
     class P governance
     class S,L,SP,C,U academic
     class A student
-    class E,CR evidence` },
-  { id: "creation", label: "Level creation", title: "Governed Level publication", source: `flowchart TD
-    PB["Programme Board approves rules"] --> CH["Course Head configures programme"]
-    CH --> LC["Course Head creates Learning Cycle"]
-    LC --> CO["Level Coordinator prepares plan"]
-    CO --> MT["Mentor Team drafts Sprints and evidence"]
-    MT --> AP["Coordinator reviews submission"]
-    AP --> PU["Course Head publishes Level"]
-    PU --> AL["Learners and mentors are assigned"]
+    class E,CR,PO evidence`,
+  },
+  {
+    id: "creation",
+    label: "Level creation",
+    title: "Governed Level publication",
+    source: `flowchart TD
+    subgraph Governance ["Academic Governance Layer"]
+      PB["Programme Board approves rules"] --> CH["Course Head configures programme master"]
+      CH --> LC["Course Head creates Learning Cycle master"]
+    end
+    subgraph Planning ["Level & Sprint Planning"]
+      LC --> CO["Level Coordinator prepares delivery plan"]
+      CO --> MT["Mentor Team drafts Sprints, briefs & rubrics"]
+      MT --> AP["Level Coordinator quality reviews submission"]
+    end
+    subgraph Publication ["Publication & Activation"]
+      AP --> PU["Course Head approves & publishes Level"]
+      PU --> AL["Learners and mentors assigned to workspace"]
+    end
     classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
     classDef decision fill:#EEE4FF,color:#362052,stroke:#7B5BC4,stroke-width:1.5px
     classDef mentor fill:#DDF7F2,color:#123D3A,stroke:#218C7E,stroke-width:1.5px
@@ -309,18 +331,29 @@ const mermaidCharts = [
     class PB,CH,LC,PU governance
     class CO,AP decision
     class MT mentor
-    class AL student` },
-  { id: "level-one", label: "Level 1 allocation", title: "Orientation and Foundations", source: `flowchart TD
-    L1["Level 1: Orientation and Foundations"] --> V["Lead: Vyga V R"]
-    V --> SS["Sprint support: Soorya Krishnan G"]
-    V --> SM["Student success: Smitha Surendran"]
-    L1 --> GH["Git and GitHub track"]
-    L1 --> CO["Five-student cohort"]
-    CO --> A["Alfin"]
-    CO --> AR["Anakha Rajesh"]
-    CO --> AN["Annamma"]
-    CO --> RS["Annrosna"]
-    CO --> DG["Dhanush Girish"]
+    class AL student`,
+  },
+  {
+    id: "level-one",
+    label: "Level 1 allocation",
+    title: "Orientation and Foundations",
+    source: `flowchart TD
+    subgraph Leadership ["Level 1 Leadership"]
+      L1["Level 1: Orientation and Foundations"] --> V["Lead: Vyga V R"]
+    end
+    subgraph Mentorship ["Mentorship Support Structure"]
+      V --> SS["Sprint support: Soorya Krishnan G"]
+      V --> SM["Student success: Smitha Surendran"]
+      L1 --> GH["Git & GitHub professional track"]
+    end
+    subgraph Cohort ["Prototype Student Cohort"]
+      L1 --> CO["Five-student prototype cohort"]
+      CO --> A["Alfin"]
+      CO --> AR["Anakha Rajesh"]
+      CO --> AN["Annamma"]
+      CO --> RS["Annrosna"]
+      CO --> DG["Dhanush Girish"]
+    end
     classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
     classDef decision fill:#EEE4FF,color:#362052,stroke:#7B5BC4,stroke-width:1.5px
     classDef mentor fill:#DDF7F2,color:#123D3A,stroke:#218C7E,stroke-width:1.5px
@@ -330,31 +363,57 @@ const mermaidCharts = [
     class V decision
     class SS,SM mentor
     class GH evidence
-    class CO,A,AR,AN,RS,DG student` },
-  { id: "student", label: "Student delivery", title: "Brief to professional evidence", source: `flowchart TD
-    B["Receive Sprint brief"] --> U["Understand outcomes and constraints"]
-    U --> P["Prepare personal or team plan"]
-    P --> W["Perform workplace tasks"]
-    W --> R["Record decisions and learning"]
-    R --> E["Attach professional evidence"]
-    E --> S["Submit for mentor review"]
+    class CO,A,AR,AN,RS,DG student`,
+  },
+  {
+    id: "student",
+    label: "Student delivery",
+    title: "Brief to professional evidence",
+    source: `flowchart TD
+    subgraph Discovery ["Sprint Discovery & Briefing"]
+      B["Receive Sprint Brief & Outcomes"] --> U["Understand constraints & criteria"]
+      U --> P["Prepare personal or team execution plan"]
+    end
+    subgraph Execution ["Work Board Active Execution"]
+      P --> W["Implement workplace engineering tasks"]
+      W --> R["Record architectural decisions & commits"]
+      R --> T["Execute automated tests & local quality gates"]
+    end
+    subgraph EvidenceSubmission ["Accredited Evidence Submission"]
+      T --> E["Attach PRs, traces & runbooks to Evidence"]
+      E --> S["Submit for faculty & mentor evaluation"]
+    end
     classDef academic fill:#DFE7FF,color:#16244C,stroke:#5269D6,stroke-width:1.5px
     classDef student fill:#FFF0CF,color:#4D3410,stroke:#C88922,stroke-width:1.5px
     classDef evidence fill:#DDF5E7,color:#153A27,stroke:#32965F,stroke-width:1.5px
     class B academic
-    class U,P,W,R student
-    class E,S evidence` },
-  { id: "mentor", label: "Mentor review", title: "Evidence-led mentoring loop", source: `flowchart TD
-    A["Accept allocation"] --> C["Calibrate rubric and quality gates"]
-    C --> M["Conduct mentoring checkpoint"]
-    M --> I["Inspect workplace artifacts"]
-    I --> J{"Evidence meets standard?"}
-    J -- "No" --> R["Issue evidence-linked revision"]
-    R --> RS["Review resubmission"]
-    RS --> J
-    J -- "Yes" --> V["Validate competency"]
-    V --> REC["Submit recommendation"]
-    REC --> CH["Course Head decision"]
+    class U,P,W,R,T student
+    class E,S evidence`,
+  },
+  {
+    id: "mentor",
+    label: "Mentor review",
+    title: "Evidence-led mentoring loop",
+    source: `flowchart TD
+    subgraph Preparation ["Mentor Calibration"]
+      A["Accept Level Allocation"] --> C["Calibrate rubric and quality gates"]
+      C --> M["Conduct mentoring checkpoint"]
+    end
+    subgraph ReviewGate ["Review & Evaluation Gate"]
+      M --> I["Inspect workplace code & artifacts"]
+      I --> J{"Evidence meets criteria?"}
+    end
+    subgraph RemediationTrack ["Structured Rework Loop"]
+      J -- "Deficiencies found" --> R["Issue 3-column critique dossier"]
+      R --> RW["Student executes fix on Work Board"]
+      RW --> RS["Review resubmitted test traces"]
+      RS --> J
+    end
+    subgraph Endorsement ["Accreditation & Approval"]
+      J -- "Standards verified" --> V["Validate competency achievement"]
+      V --> REC["Submit formal recommendation"]
+      REC --> CH["Course Head final signoff"]
+    end
     classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
     classDef mentor fill:#DDF7F2,color:#123D3A,stroke:#218C7E,stroke-width:1.5px
     classDef evidence fill:#DDF5E7,color:#153A27,stroke:#32965F,stroke-width:1.5px
@@ -362,19 +421,30 @@ const mermaidCharts = [
     classDef decision fill:#EEE4FF,color:#362052,stroke:#7B5BC4,stroke-width:2px
     class A,C,M mentor
     class I,V evidence
-    class R,RS revision
+    class R,RW,RS revision
     class J,REC decision
-    class CH governance` },
-  { id: "assessment", label: "Assessment and credits", title: "Academic and progression separation", source: `flowchart TD
-    E["Reviewed evidence"] --> MR["Mentor recommendation"]
-    MR --> FE["Authorised faculty evaluation"]
-    FE --> AS["Academic component scores"]
-    AS --> CH["Course Head approval"]
-    CH --> CR["Course result and credits"]
-    MR --> GP["Gamification recommendation"]
-    GP --> LG["Separate Level Gate"]
-    LG --> PD["Progression decision"]
-    AT["DUK@360 attendance"] -. "Remains external" .-> PD
+    class CH governance`,
+  },
+  {
+    id: "assessment",
+    label: "Assessment and credits",
+    title: "Academic and progression separation",
+    source: `flowchart TD
+    subgraph FormalDegree ["Official Degree Assessment (GPA & Credits)"]
+      E["Reviewed Authentic Evidence"] --> FE["Authorised Faculty Evaluation"]
+      FE --> AS["5 Course Plan Component Scores (82.1%)"]
+      AS --> CH["Course Head Formal Approval"]
+      CH --> CR["Official Course Result & Degree Credits"]
+    end
+    subgraph VelocityPace ["Continuous Sprint Velocity (Quest Points)"]
+      E --> MR["Mentor Recommendation"]
+      MR --> GP["Formative Quest Points (780 / 1000 QP)"]
+      GP --> LG["Level Gate Readiness Check"]
+      LG --> PD["Progression Recommendation"]
+    end
+    subgraph ExternalERP ["Authoritative External System"]
+      AT["DUK@360 ERP Attendance"] -. "Statutory Attendance Boundary" .-> PD
+    end
     classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
     classDef academic fill:#DFE7FF,color:#16244C,stroke:#5269D6,stroke-width:1.5px
     classDef mentor fill:#DDF7F2,color:#123D3A,stroke:#218C7E,stroke-width:1.5px
@@ -386,7 +456,134 @@ const mermaidCharts = [
     class FE,AS academic
     class CH governance
     class GP,LG,PD decision
-    class AT external` },
+    class AT external`,
+  },
+  {
+    id: "engine",
+    label: "3-Tier Student Engine",
+    title: "Dashboard to Portfolio closed loop",
+    source: `flowchart TD
+    subgraph Cockpit ["1. Dashboard Overview (The Cockpit)"]
+      D1["Urgent Blocker Hero (DS-907 34h SLA)"]
+      D2["Level 9 & Sprint 04 Roadmap Strip"]
+      D3["Pod Activity & Quest Points (780 QP)"]
+    end
+    subgraph Studio ["2. Work Board (The Execution Studio)"]
+      W1["Active Assignment Selection (DS-907 / DS-904)"]
+      W2["Client Brief & Rubric Criteria"]
+      W3["Attach Pull Requests & Test Reports"]
+      W4["Submit for Faculty Review"]
+    end
+    subgraph Evaluation ["3. Faculty Critique & Evaluation Gate"]
+      F1["3-Column Critique Dossier (Working / Change / Purpose)"]
+      F2["Interactive Revision Checklist"]
+      F3["Quality Gate Verification"]
+    end
+    subgraph Vault ["4. Evidence & Portfolio (Permanent Vault)"]
+      P1["22 Degree Required Artifacts"]
+      P2["PO1–PO8 & PSO1–PSO4 Outcome Matrices"]
+      P3["University Viva Voce & Employer Defense"]
+    end
+    D1 ==>|"Execute on Work Board"| W1
+    W1 --> W2 --> W3 --> W4
+    W4 ==>|"Submit"| F1
+    F1 --> F2
+    F2 -.->|"Deficiencies found"| W1
+    F2 -->|"Passing standard"| F3
+    F3 ==>|"Graduates to Vault"| P1
+    P1 --> P2 --> P3
+    P1 -.->|"Fix Quality Gap"| W1
+    classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
+    classDef academic fill:#DFE7FF,color:#16244C,stroke:#5269D6,stroke-width:1.5px
+    classDef student fill:#FFF0CF,color:#4D3410,stroke:#C88922,stroke-width:1.5px
+    classDef evidence fill:#DDF5E7,color:#153A27,stroke:#32965F,stroke-width:1.5px
+    classDef revision fill:#FFE1E6,color:#501C28,stroke:#C84D62,stroke-width:1.5px
+    classDef decision fill:#EEE4FF,color:#362052,stroke:#7B5BC4,stroke-width:2px
+    class D1,D2,D3 student
+    class W1,W2,W3,W4 academic
+    class F1,F2 revision
+    class F3 decision
+    class P1,P2,P3 evidence`,
+  },
+  {
+    id: "remediation",
+    label: "Quality Gate Remediation",
+    title: "E2E Failure to Verified Evidence",
+    source: `flowchart TD
+    subgraph Detection ["1. Automated Test Failure"]
+      TF["Playwright E2E Suite Executed"] --> FL["2 Failing Scenarios: Token Refresh & Rollback"]
+      FL --> EH["Elevated to Urgent Dashboard Hero (34h SLA)"]
+    end
+    subgraph Critique ["2. Faculty Review & Critique"]
+      EH --> CD["Dossier Issued: What is Working vs What Must Change"]
+      CD --> CL["4-Item Actionable Revision Checklist"]
+    end
+    subgraph Resolution ["3. Active Workbench Remediation"]
+      CL --> WB["Student opens Work Board (DS-907)"]
+      WB --> FX["Fix timeout threshold & race conditions in code"]
+      FX --> TR["Re-run Playwright suite against staging cluster"]
+      TR --> AT["Attach clean passing test trace & updated PR"]
+    end
+    subgraph Acceptance ["4. Verification & Outcome Clearance"]
+      AT --> RV["Faculty re-evaluates submission"]
+      RV --> SG["Faculty signoff granted"]
+      SG --> OV["PO4 & PSO1 Evidence Gap resolved in Portfolio"]
+    end
+    classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
+    classDef academic fill:#DFE7FF,color:#16244C,stroke:#5269D6,stroke-width:1.5px
+    classDef student fill:#FFF0CF,color:#4D3410,stroke:#C88922,stroke-width:1.5px
+    classDef evidence fill:#DDF5E7,color:#153A27,stroke:#32965F,stroke-width:1.5px
+    classDef revision fill:#FFE1E6,color:#501C28,stroke:#C84D62,stroke-width:1.5px
+    classDef decision fill:#EEE4FF,color:#362052,stroke:#7B5BC4,stroke-width:2px
+    class TF,FL,CD,CL revision
+    class EH,WB,FX,TR student
+    class RV decision
+    class AT,SG,OV evidence`,
+  },
+  {
+    id: "outcomes-map",
+    label: "Outcome Architecture",
+    title: "PO1–PO8 & PSO1–PSO4 Framework",
+    source: `flowchart TD
+    subgraph CorePOs ["Universal Programme Outcomes (PO1–PO8)"]
+      PO1["PO1 · AI & Intelligent Systems"]
+      PO2["PO2 · Cloud-Native Full Stack Architecture"]
+      PO3["PO3 · Distributed Backend & Data Systems"]
+      PO4["PO4 · Modern Tooling & DevOps QA"]
+      PO8["PO8 · Professional Ethics & Viva Defense"]
+    end
+    subgraph SpecPSOs ["Specialized Outcomes (PSO1–PSO4)"]
+      PSO1["PSO1 · Distributed Transaction Resilience"]
+      PSO2["PSO2 · Microservices Cloud Platforms"]
+      PSO3["PSO3 · MLOps & Continuous Delivery"]
+      PSO4["PSO4 · Automated Quality-Gate Testing"]
+    end
+    subgraph ArtifactVault ["22 Verified Degree Artifacts"]
+      PR["Pull Requests & ADRs"] --> PO2
+      PR --> PO3
+      TR["Playwright Test Traces"] --> PO4
+      TR --> PSO4
+      DB["PostgreSQL Migrations"] --> PSO1
+      RB["Production Runbooks"] --> PO8
+      RB --> PSO2
+    end
+    subgraph VivaDefense ["Degree Accreditation & Placement"]
+      PO2 --> VV["University Viva Voce Defense"]
+      PO4 --> VV
+      PSO1 --> VV
+      VV --> ACC["Accredited M.Sc. Degree Awarded"]
+    end
+    classDef governance fill:#3448A6,color:#FFFFFF,stroke:#24347C,stroke-width:2px
+    classDef academic fill:#DFE7FF,color:#16244C,stroke:#5269D6,stroke-width:1.5px
+    classDef student fill:#FFF0CF,color:#4D3410,stroke:#C88922,stroke-width:1.5px
+    classDef evidence fill:#DDF5E7,color:#153A27,stroke:#32965F,stroke-width:1.5px
+    classDef decision fill:#EEE4FF,color:#362052,stroke:#7B5BC4,stroke-width:2px
+    class PO1,PO2,PO3,PO4,PO8 academic
+    class PSO1,PSO2,PSO3,PSO4 governance
+    class PR,TR,DB,RB student
+    class VV decision
+    class ACC evidence`,
+  },
 ] as const;
 
 function MermaidDiagram({ chart, title }: { chart: string; title: string }) {
@@ -405,28 +602,154 @@ function MermaidDiagram({ chart, title }: { chart: string; title: string }) {
           securityLevel: "strict",
           theme: dark ? "dark" : "base",
           flowchart: { htmlLabels: false, curve: "basis", nodeSpacing: 42, rankSpacing: 48 },
-          themeVariables: dark ? { primaryColor: "#26376f", primaryTextColor: "#eef3ff", primaryBorderColor: "#6e82e8", lineColor: "#93A3C8", edgeLabelBackground: "#111a31", secondaryColor: "#173f48", tertiaryColor: "#172139", clusterBkg: "#131d35", clusterBorder: "#40517c", fontFamily: "Inter, system-ui, sans-serif" } : { primaryColor: "#eef1ff", primaryTextColor: "#172039", primaryBorderColor: "#6173d8", lineColor: "#68789A", edgeLabelBackground: "#FFFFFF", secondaryColor: "#e8f8f6", tertiaryColor: "#f5f7fc", clusterBkg: "#F8FAFF", clusterBorder: "#C9D2E7", fontFamily: "Inter, system-ui, sans-serif" },
+          themeVariables: dark
+            ? {
+                primaryColor: "#26376f",
+                primaryTextColor: "#eef3ff",
+                primaryBorderColor: "#6e82e8",
+                lineColor: "#93A3C8",
+                edgeLabelBackground: "#111a31",
+                secondaryColor: "#173f48",
+                tertiaryColor: "#172139",
+                clusterBkg: "#131d35",
+                clusterBorder: "#40517c",
+                fontFamily: "Inter, system-ui, sans-serif",
+              }
+            : {
+                primaryColor: "#eef1ff",
+                primaryTextColor: "#172039",
+                primaryBorderColor: "#6173d8",
+                lineColor: "#68789A",
+                edgeLabelBackground: "#FFFFFF",
+                secondaryColor: "#e8f8f6",
+                tertiaryColor: "#f5f7fc",
+                clusterBkg: "#F8FAFF",
+                clusterBorder: "#C9D2E7",
+                fontFamily: "Inter, system-ui, sans-serif",
+              },
         });
         const result = await mermaid.render(`msdsp-${reactId}-${renderCount++}`, chart);
-        if (!cancelled) { setSvg(result.svg); setError(""); }
+        if (!cancelled) {
+          setSvg(result.svg);
+          setError("");
+        }
       } catch {
         if (!cancelled) setError("Diagram could not be rendered.");
       }
     };
     void render();
-    const observer = new MutationObserver(() => { void render(); });
+    const observer = new MutationObserver(() => {
+      void render();
+    });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => { cancelled = true; observer.disconnect(); };
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
   }, [chart, reactId]);
-  return <div className="mermaid-render" role="img" aria-label={title}>{error ? <p role="alert">{error}</p> : svg ? <div dangerouslySetInnerHTML={{ __html: svg }} /> : <span className="mermaid-loading" role="status"><i /><b>Rendering diagram…</b></span>}</div>;
+  return (
+    <div className="mermaid-render" role="img" aria-label={title}>
+      {error ? (
+        <p role="alert">{error}</p>
+      ) : svg ? (
+        <div dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : (
+        <span className="mermaid-loading" role="status">
+          <i />
+          <b>Rendering diagram…</b>
+        </span>
+      )}
+    </div>
+  );
 }
 
 function MermaidGallery({ notify }: { notify: (message: string) => void }) {
   const [selected, setSelected] = useState<(typeof mermaidCharts)[number]["id"]>("structure");
   const chart = mermaidCharts.find((item) => item.id === selected) ?? mermaidCharts[0];
-  const legend = [["governance", "Governance"], ["academic", "Academic"], ["mentor", "Mentor"], ["student", "Student work"], ["evidence", "Verified evidence"], ["revision", "Revision"], ["decision", "Decision"], ["external", "External system"]];
-  return <article className="panel mermaid-gallery"><PanelHeading label="MERMAID REFERENCE DIAGRAMS" title="Explore each workflow as a formal flowchart" meta="6 diagrams" /><div className="mermaid-tabs" role="tablist" aria-label="Programme workflow diagrams">{mermaidCharts.map((item) => <button role="tab" aria-selected={selected === item.id} className={selected === item.id ? "active" : ""} key={item.id} onClick={() => { setSelected(item.id); notify(`${item.title} diagram opened`); }}><Icon name={item.id === "structure" ? "layers" : item.id === "creation" ? "network" : item.id === "level-one" ? "users" : item.id === "student" ? "brief" : item.id === "mentor" ? "review" : "chart"} />{item.label}</button>)}</div><div className="mermaid-legend" aria-label="Diagram colour key">{legend.map(([tone, label]) => <span key={tone}><i className={tone} />{label}</span>)}</div><div className="mermaid-stage"><header><span><small>SELECTED FLOW</small><h3>{chart.title}</h3></span><i><b /> Live workflow</i></header><MermaidDiagram chart={chart.source} title={chart.title} /></div><footer><Icon name="shield" /><p>Colour identifies responsibility and record type. Animated connectors show direction only; they do not indicate live system activity. Motion is disabled when reduced motion is preferred.</p></footer></article>;
+  const legend = [
+    ["governance", "Governance"],
+    ["academic", "Academic"],
+    ["mentor", "Mentor"],
+    ["student", "Student work"],
+    ["evidence", "Verified evidence"],
+    ["revision", "Revision"],
+    ["decision", "Decision"],
+    ["external", "External system"],
+  ];
+  return (
+    <article className="panel mermaid-gallery">
+      <PanelHeading
+        label="MERMAID REFERENCE DIAGRAMS"
+        title="Explore each workflow as a formal flowchart"
+        meta={`${mermaidCharts.length} diagrams`}
+      />
+      <div className="mermaid-tabs" role="tablist" aria-label="Programme workflow diagrams">
+        {mermaidCharts.map((item) => (
+          <button
+            role="tab"
+            aria-selected={selected === item.id}
+            className={selected === item.id ? "active" : ""}
+            key={item.id}
+            onClick={() => {
+              setSelected(item.id);
+              notify(`${item.title} diagram opened`);
+            }}
+          >
+            <Icon
+              name={
+                item.id === "structure"
+                  ? "layers"
+                  : item.id === "creation"
+                  ? "network"
+                  : item.id === "level-one"
+                  ? "users"
+                  : item.id === "student"
+                  ? "brief"
+                  : item.id === "mentor"
+                  ? "review"
+                  : item.id === "assessment"
+                  ? "chart"
+                  : item.id === "engine"
+                  ? "grid"
+                  : item.id === "remediation"
+                  ? "target"
+                  : "file"
+              }
+            />
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="mermaid-legend" aria-label="Diagram colour key">
+        {legend.map(([tone, label]) => (
+          <span key={tone}>
+            <i className={tone} />
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="mermaid-stage">
+        <header>
+          <span>
+            <small>SELECTED FLOW</small>
+            <h3>{chart.title}</h3>
+          </span>
+          <i>
+            <b /> Live workflow
+          </i>
+        </header>
+        <MermaidDiagram chart={chart.source} title={chart.title} />
+      </div>
+      <footer>
+        <Icon name="shield" />
+        <p>
+          Colour identifies responsibility and record type. Animated connectors show direction only; they do not indicate live system activity. Motion is disabled when reduced motion is preferred.
+        </p>
+      </footer>
+    </article>
+  );
 }
+
 
 function ProgrammeWorkflow({ notify }: { notify: (message: string) => void }) {
   const ownership = [
