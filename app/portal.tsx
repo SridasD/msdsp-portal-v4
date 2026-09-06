@@ -187,7 +187,7 @@ export default function Portal() {
 
 function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode, onNavigate, selectedAssignmentId, setSelectedAssignmentId }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void; onNavigate: (page: string, assignmentId?: string) => void; selectedAssignmentId: string; setSelectedAssignmentId: (id: string) => void }) {
   if (page === "Work Board") return <Workboard openEvidence={() => openEvidence(selectedAssignmentId)} notify={notify} onNavigate={onNavigate} selectedAssignmentId={selectedAssignmentId} onSelectAssignment={setSelectedAssignmentId} />;
-  if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} />;
+  if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} onNavigate={onNavigate} />;
   if (page === "Skills & Outcomes") return <OutcomesPage />;
   if (page === "Faculty Feedback") return <FeedbackPage notify={notify} />;
   if (page === "Calendar") return <StudentCalendar notify={notify} />;
@@ -710,13 +710,13 @@ function Workboard({
       action="Record learning evidence"
       onAction={() => openEvidence(current.id)}
     />
-    {/* New Student Onboarding Banner: How Work Board connects to Dashboard */}
+    {/* New Student Onboarding Banner: How Work Board connects to Dashboard & Portfolio */}
     <article className="panel workboard-onboarding-card">
       <div className="wb-onboard-content">
-        <span className="eyebrow">NEW STUDENT REFERENCE · WORK BOARD WORKFLOW</span>
-        <h2>Your Engineering Execution Workbench</h2>
+        <span className="eyebrow">NEW STUDENT REFERENCE · WORK BOARD VS PORTFOLIO</span>
+        <h2>Your Active Engineering Execution Workbench</h2>
         <p>
-          While your <strong>Overview Dashboard</strong> highlights priorities, deadlines, and your 780 Quest points, the <strong>Work Board</strong> is where you actually perform and submit that work: inspect the technical brief, check grading rubrics, attach engineering artifacts (PRs, migrations, test traces), and request faculty evaluation.
+          While your <strong>Overview Dashboard</strong> is your strategic cockpit (priorities & points), and your <strong>Evidence & Portfolio</strong> is your cumulative degree showcase, this <strong>Work Board</strong> is your in-flight workshop: inspect the technical brief, check grading rubrics, attach code deliverables (PRs, migrations, test traces), and submit for faculty review.
         </p>
         <div className="wb-step-flow">
           <span className="wb-flow-pill"><Icon name="book" /> 1. Read Brief</span>
@@ -729,9 +729,14 @@ function Workboard({
         </div>
       </div>
       {onNavigate && (
-        <button type="button" className="wb-overview-jump" onClick={() => onNavigate("Overview")} title="Return to Dashboard Overview">
-          ← Return to Dashboard Overview
-        </button>
+        <div className="wb-header-nav-actions">
+          <button type="button" className="wb-overview-jump" onClick={() => onNavigate("Overview")} title="Return to Dashboard Overview">
+            ← Return to Dashboard Overview
+          </button>
+          <button type="button" className="wb-overview-jump secondary" onClick={() => onNavigate("Evidence & Portfolio")} title="View your cumulative Evidence Portfolio">
+            View Evidence Portfolio →
+          </button>
+        </div>
       )}
     </article>
 
@@ -799,6 +804,25 @@ function Workboard({
               <Icon name="arrow" />
             </button>
           ))}
+          <div className="wb-portfolio-bridge">
+            <div className="wb-pb-text">
+              <Icon name="shield" />
+              <div>
+                <b>Connected to Evidence & Portfolio</b>
+                <p>Deliverables accepted during faculty review are automatically archived in your permanent Evidence & Portfolio, mapped to PO1–PO8 competencies.</p>
+              </div>
+            </div>
+            {onNavigate && (
+              <button
+                type="button"
+                className="wb-pb-btn"
+                onClick={() => onNavigate("Evidence & Portfolio")}
+                title="View your verified degree portfolio"
+              >
+                Inspect Evidence Portfolio (18 Ready) →
+              </button>
+            )}
+          </div>
         </div>
       )}
       {assignmentView === "History" && (
@@ -857,9 +881,216 @@ function Workboard({
   </>;
 }
 
-function EvidenceLibrary({ openEvidence, notify }: { openEvidence: () => void; notify: (message: string) => void }) {
-  const evidence = [["PR-42 · Frontend–backend integration", "Engineering artifact", "Reviewed code connecting the Next.js client to the versioned REST services", "Accepted", "Create · PO2 · PSO1"], ["OpenAPI 3.1 contract", "API specification", "Endpoints, schemas, authorization rules and error semantics", "Accepted", "Evaluate · PO3 · PSO2"], ["PostgreSQL migration set", "Data engineering", "Versioned schema, constraints, seed data and rollback procedure", "Under review", "Create · PO3"], ["Playwright end-to-end report", "Quality evidence", "Priority journeys, trace files and documented failure reproduction", "Revision required", "Evaluate · PO4 · PSO4"], ["Local deployment runbook", "Operational document", "Environment, secrets, Docker Compose, health checks and recovery steps", "Accepted", "Create · PO4 · PO8"], ["Sprint 04 integration retrospective", "Reflective practice", "Root causes, team decisions, learning and next experiment", "Accepted", "Reflect · PO8"]];
-  return <><PageHeader eyebrow="EVIDENCE & PORTFOLIO" title="A verifiable full-stack engineering portfolio" description="Each artifact connects an implementation decision to its contract, test evidence, mapped outcome, review history and revision status." action="Add learning evidence" onAction={openEvidence} /><div className="evidence-summary"><span><b>22</b>Required evidence items</span><span><b>18</b>Ready</span><span><b>2</b>In review</span><span><b>2</b>Quality gaps</span></div><div className="card-grid">{evidence.map((item, i) => <article className="panel evidence-card" key={item[0]}><div><span className={`file-tile t${i}`}><Icon name="file" /></span><i className={`status ${item[3].toLowerCase().replaceAll(" ", "-")}`}>{item[3]}</i></div><small>{item[1]}</small><h3>{item[0]}</h3><p>{item[2]}</p><div className="mapped-outcomes">{item[4]}</div><button onClick={() => notify(`${item[0]} opened`)}>Inspect evidence trail <Icon name="arrow" /></button></article>)}</div></>;
+function EvidenceLibrary({
+  openEvidence,
+  notify,
+  onNavigate,
+}: {
+  openEvidence: () => void;
+  notify: (message: string) => void;
+  onNavigate?: (page: string, assignmentId?: string) => void;
+}) {
+  const [filter, setFilter] = useState<"all" | "Accepted" | "Under review" | "Revision required">("all");
+
+  const evidence = [
+    {
+      title: "PR-42 · Frontend–backend integration",
+      type: "Engineering artifact",
+      description: "Reviewed code connecting the Next.js client to the versioned REST services",
+      status: "Accepted",
+      outcomes: "Create · PO2 · PSO1",
+      assignmentId: "DS-904",
+      assignmentTitle: "DS-904 Full-Stack Integration",
+      reviewer: "Krishnasree K",
+      tileClass: "t0",
+    },
+    {
+      title: "OpenAPI 3.1 contract",
+      type: "API specification",
+      description: "Endpoints, schemas, authorization rules and error semantics",
+      status: "Accepted",
+      outcomes: "Evaluate · PO3 · PSO2",
+      assignmentId: "DS-904",
+      assignmentTitle: "DS-904 / DS-905 API Contract",
+      reviewer: "Soorya S Kumar",
+      tileClass: "t1",
+    },
+    {
+      title: "PostgreSQL migration set",
+      type: "Data engineering",
+      description: "Versioned schema, constraints, seed data and rollback procedure",
+      status: "Under review",
+      outcomes: "Create · PO3",
+      assignmentId: "DS-905",
+      assignmentTitle: "DS-905 PostgreSQL Integration",
+      reviewer: "Soorya S Kumar",
+      tileClass: "t2",
+    },
+    {
+      title: "Playwright end-to-end report",
+      type: "Quality evidence",
+      description: "Priority journeys, trace files and documented failure reproduction",
+      status: "Revision required",
+      outcomes: "Evaluate · PO4 · PSO4",
+      assignmentId: "DS-907",
+      assignmentTitle: "DS-907 Quality Gate Revision",
+      reviewer: "Ajitha V S",
+      tileClass: "t3",
+      needsRevision: true,
+    },
+    {
+      title: "Local deployment runbook",
+      type: "Operational document",
+      description: "Environment, secrets, Docker Compose, health checks and recovery steps",
+      status: "Accepted",
+      outcomes: "Create · PO4 · PO8",
+      assignmentId: "DS-904",
+      assignmentTitle: "DS-904 Deployment Readiness",
+      reviewer: "Krishnasree K",
+      tileClass: "t4",
+    },
+    {
+      title: "Sprint 04 integration retrospective",
+      type: "Reflective practice",
+      description: "Root causes, team decisions, learning and next experiment",
+      status: "Accepted",
+      outcomes: "Reflect · PO8",
+      assignmentId: "DS-907",
+      assignmentTitle: "Sprint 04 Retrospective",
+      reviewer: "Ajitha V S",
+      tileClass: "t5",
+    },
+  ];
+
+  const filtered = filter === "all" ? evidence : evidence.filter((item) => item.status === filter);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="EVIDENCE & PORTFOLIO · DEGREE SHOWCASE"
+        title="A verifiable full-stack engineering portfolio"
+        description="Each artifact connects an implementation decision to its contract, test evidence, mapped outcome, review history and revision status."
+        action="Add learning evidence"
+        onAction={openEvidence}
+      />
+
+      {/* New Student Onboarding Banner: Portfolio vs Work Board */}
+      <article className="panel evidence-onboarding-card">
+        <div className="ev-onboard-content">
+          <span className="eyebrow">NEW STUDENT REFERENCE · PORTFOLIO VS WORK BOARD</span>
+          <h2>Your Cumulative Verified Engineering Showcase</h2>
+          <p>
+            While your <strong>Work Board</strong> is where you actively execute and submit sprint assignments (DS-904, DS-907), this <strong>Evidence & Portfolio</strong> is your permanent repository of verified deliverables. Each accepted artifact here is permanently mapped to university Programme Outcomes (PO1–PO8) and serves as audited proof of your competence for viva defence, academic marks, and employer portfolios.
+          </p>
+          <div className="ev-triad-flow">
+            <span className="ev-flow-pill"><Icon name="grid" /> 1. Dashboard: Cockpit & Alerts</span>
+            <span className="ev-arrow" aria-hidden="true">→</span>
+            <span className="ev-flow-pill"><Icon name="brief" /> 2. Work Board: Active Execution</span>
+            <span className="ev-arrow" aria-hidden="true">→</span>
+            <span className="ev-flow-pill accent"><Icon name="file" /> 3. Portfolio: Permanent Showcase</span>
+          </div>
+        </div>
+        {onNavigate && (
+          <div className="ev-onboard-actions">
+            <button
+              type="button"
+              className="wb-overview-jump"
+              onClick={() => onNavigate("Work Board")}
+              title="Jump to active execution workbench"
+            >
+              <Icon name="brief" /> Open Work Board Workbench →
+            </button>
+            <button
+              type="button"
+              className="wb-overview-jump secondary"
+              onClick={() => onNavigate("Overview")}
+              title="Return to Dashboard Overview"
+            >
+              ← Return to Dashboard
+            </button>
+          </div>
+        )}
+      </article>
+
+      <div className="evidence-summary">
+        <span><b>22</b>Required evidence items</span>
+        <span><b>18</b>Ready</span>
+        <span><b>2</b>In review</span>
+        <span><b>2</b>Quality gaps</span>
+      </div>
+
+      {/* Interactive Filter Pills */}
+      <div className="evidence-filter-bar" role="group" aria-label="Filter evidence by status">
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "all" ? "active" : ""}`}
+          onClick={() => setFilter("all")}
+        >
+          All Artifacts ({evidence.length})
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "Accepted" ? "active" : ""}`}
+          onClick={() => setFilter("Accepted")}
+        >
+          Accepted ({evidence.filter((e) => e.status === "Accepted").length})
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "Under review" ? "active" : ""}`}
+          onClick={() => setFilter("Under review")}
+        >
+          In Review ({evidence.filter((e) => e.status === "Under review").length})
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "Revision required" ? "active" : ""}`}
+          onClick={() => setFilter("Revision required")}
+        >
+          Quality Gaps ({evidence.filter((e) => e.status === "Revision required").length})
+        </button>
+      </div>
+
+      <div className="card-grid">
+        {filtered.map((item) => (
+          <article className="panel evidence-card" key={item.title}>
+            <div>
+              <span className={`file-tile ${item.tileClass}`}><Icon name="file" /></span>
+              <i className={`status ${item.status.toLowerCase().replaceAll(" ", "-")}`}>{item.status}</i>
+            </div>
+            <div className="evidence-origin-row">
+              <small>{item.type}</small>
+              <span className="evidence-source-pill" title={`Originated in assignment ${item.assignmentId}`}>
+                <Icon name="brief" /> {item.assignmentId}
+              </span>
+            </div>
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            <div className="mapped-outcomes">{item.outcomes}</div>
+
+            {/* If Revision Required, provide direct jump to fix on Work Board */}
+            {item.needsRevision && onNavigate ? (
+              <button
+                type="button"
+                className="evidence-fix-btn"
+                onClick={() => onNavigate("Work Board", item.assignmentId)}
+                title={`Open ${item.assignmentId} on Work Board to resolve quality gap`}
+              >
+                <Icon name="alert" /> Fix on Work Board ({item.assignmentId}) →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => notify(`${item.title} opened`)}
+              >
+                Inspect evidence trail <Icon name="arrow" />
+              </button>
+            )}
+          </article>
+        ))}
+      </div>
+    </>
+  );
 }
 
 function OutcomesPage() {

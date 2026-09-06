@@ -116,7 +116,7 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
             className={activeTab === "workboard" ? "active" : ""}
             onClick={() => setActiveTab("workboard")}
           >
-            <Icon name="brief" /> 4. Dashboard vs Work Board
+            <Icon name="brief" /> 4. Dashboard vs Work Board vs Portfolio
           </button>
         </div>
 
@@ -158,28 +158,19 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
                 <div className="v2-htree-connector" />
 
                 <div className="v2-htree-node h-sprint">
-                  <div className="v2-htree-badge">SPRINT</div>
+                  <div className="v2-htree-badge">SPRINT (CADENCE)</div>
                   <div className="v2-htree-info">
-                    <b>Sprint 04: Verify (Current Week)</b>
-                    <span>1-week execution cycle within the level (Sprint 1: Foundation → 2: Contracts → 3: Integrate → 4: Verify → 5: Live Demo)</span>
+                    <b>Sprint 04 · Quality Gate & End-to-End Verification</b>
+                    <span>Current active sprint (Week 19) · Focus: Automating Playwright test suites</span>
                   </div>
                 </div>
                 <div className="v2-htree-connector" />
 
-                <div className="v2-htree-node h-activity">
-                  <div className="v2-htree-badge">ACTIVITY / ASSIGNMENT</div>
+                <div className="v2-htree-node h-assignment">
+                  <div className="v2-htree-badge">ASSIGNMENT & WORK ITEM</div>
                   <div className="v2-htree-info">
                     <b>DS-907 · End-to-End Quality Gate Revision</b>
-                    <span>Specific project deliverable submitted for faculty review (Reviewer: Ajitha V S)</span>
-                  </div>
-                </div>
-                <div className="v2-htree-connector" />
-
-                <div className="v2-htree-node h-subactivity">
-                  <div className="v2-htree-badge">SUB-ACTIVITIES (TASKS)</div>
-                  <div className="v2-htree-info">
-                    <b>Work Items & Test Traces</b>
-                    <span>1. Fix Firefox token refresh · 2. Verify rollback · 3. Attach Playwright traces to PR-42</span>
+                    <span>Due in 34 hours · Action: Fix token refresh & transaction rollback failures</span>
                   </div>
                 </div>
               </div>
@@ -190,64 +181,54 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
           {activeTab === "acronyms" && (
             <div className="v2-guide-content" tabIndex={0} role="tabpanel" aria-label="Acronyms Guide">
               <p className="v2-guide-explainer">
-                What do all the letter codes mean in your dashboard?
+                You will see several standard academic and programme acronyms across the portal. Here is what each one stands for:
               </p>
 
-              <div className="v2-glossary-grid">
-                <div className="v2-glossary-card">
-                  <div className="v2-glossary-header">
-                    <span className="v2-chip chip-indigo">DS</span>
+              <div className="v2-acronyms-table">
+                <div className="v2-acronym-card">
+                  <span className="v2-acronym-badge">DS-xxx</span>
+                  <div>
                     <b>Data Science Assignment Code</b>
-                  </div>
-                  <p>
-                    "DS" is the prefix for project deliverables in the M.Sc. Data Science curriculum. The digits signify the Level and assignment number:
-                  </p>
-                  <div className="v2-glossary-example">
+                    <p>Identifies a specific engineering problem statement and its deliverables. Example:</p>
                     <code>DS-904</code>: Level 9, Assignment 04 (Full-Stack Integration)<br />
                     <code>DS-905</code>: Level 9, Assignment 05 (PostgreSQL & API Contract)<br />
                     <code>DS-907</code>: Level 9, Assignment 07 (E2E Quality Gate)
                   </div>
                 </div>
 
-                <div className="v2-glossary-card">
-                  <div className="v2-glossary-header">
-                    <span className="v2-chip chip-violet">PO</span>
+                <div className="v2-acronym-card">
+                  <span className="v2-acronym-badge">PO</span>
+                  <div>
                     <b>Programme Outcome (PO1–PO8)</b>
-                  </div>
-                  <p>
-                    8 national engineering attributes accredited by the University that every graduate must demonstrate:
-                  </p>
-                  <div className="v2-glossary-example">
+                    <p>
+                      University-wide graduate attributes defining what you must be able to do by graduation:
+                    </p>
                     <code>PO2</code>: Cloud-native full-stack system architecture<br />
                     <code>PO3</code>: Distributed backend & data engineering<br />
                     <code>PO4</code>: DevOps, CI/CD pipelines & test automation
                   </div>
                 </div>
 
-                <div className="v2-glossary-card">
-                  <div className="v2-glossary-header">
-                    <span className="v2-chip chip-cyan">PSO</span>
+                <div className="v2-acronym-card">
+                  <span className="v2-acronym-badge">PSO</span>
+                  <div>
                     <b>Programme-Specific Outcome (PSO1–PSO4)</b>
-                  </div>
-                  <p>
-                    4 specialised capabilities unique to Digital University Kerala’s CDIPD applied product programme:
-                  </p>
-                  <div className="v2-glossary-example">
+                    <p>
+                      Specific technical competencies unique to Data Science & Product Development:
+                    </p>
                     <code>PSO1</code>: AI-powered product engineering end-to-end<br />
                     <code>PSO4</code>: Secure, quality-assured production systems
                   </div>
                 </div>
 
-                <div className="v2-glossary-card">
-                  <div className="v2-glossary-header">
-                    <span className="v2-chip chip-gold">CO</span>
+                <div className="v2-acronym-card">
+                  <span className="v2-acronym-badge">CO</span>
+                  <div>
                     <b>Course Outcome</b>
-                  </div>
-                  <p>
-                    The specific learning outcomes defined in the syllabus of an individual university course (e.g. CS102, CS105).
-                  </p>
-                  <div className="v2-glossary-example">
-                    Work on <code>DS-907</code> satisfies both <code>CS105 (CO3)</code> and <code>PO4</code>.
+                    <p>
+                      The specific learning outcome tied to a university subject.
+                      Work on <code>DS-907</code> satisfies both <code>CS105 (CO3)</code> and <code>PO4</code>.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -315,11 +296,11 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
             </div>
           )}
 
-          {/* Tab 4: Dashboard vs Work Board */}
+          {/* Tab 4: Dashboard vs Work Board vs Portfolio */}
           {activeTab === "workboard" && (
-            <div className="v2-guide-content" tabIndex={0} role="tabpanel" aria-label="Dashboard vs Work Board">
+            <div className="v2-guide-content" tabIndex={0} role="tabpanel" aria-label="Dashboard vs Work Board vs Portfolio">
               <p className="v2-guide-explainer">
-                How does your <strong>Overview Dashboard</strong> relate to the <strong>Work Board</strong>? They form a two-part loop:
+                How do your <strong>Dashboard</strong>, <strong>Work Board</strong>, and <strong>Evidence & Portfolio</strong> fit together? They form a complete 3-tier engineering progression loop:
               </p>
 
               <div className="v2-comparison-grid">
@@ -358,6 +339,24 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
                   </ul>
                   <span className="v2-comp-badge accent">Where you DO and SUBMIT the work</span>
                 </div>
+
+                <div className="v2-comparison-card portfolio">
+                  <div className="v2-comp-head">
+                    <Icon name="file" />
+                    <div>
+                      <b>Evidence & Portfolio</b>
+                      <small>Your Permanent Verified Showcase (Vault)</small>
+                    </div>
+                  </div>
+                  <p><strong>Answers:</strong> “What permanent proof have I accumulated? Which accepted artifacts prove my capabilities to examiners & employers?”</p>
+                  <ul>
+                    <li><strong>Cumulative Artifacts:</strong> 22 professional engineering assets across all cycles.</li>
+                    <li><strong>Outcome Mapping:</strong> Proof mapped to PO1–PO8 & PSO1–PSO4.</li>
+                    <li><strong>Verification State:</strong> 18 Ready, 2 In Review, 2 Quality Gaps.</li>
+                    <li><strong>Career Showcase:</strong> Audited evidence for viva defence & placement interviews.</li>
+                  </ul>
+                  <span className="v2-comp-badge violet">Your permanent VERIFIED proof</span>
+                </div>
               </div>
 
               <div className="v2-lifecycle-flow">
@@ -371,17 +370,17 @@ export function StudentGuideModal({ close }: StudentGuideModalProps) {
                   <div className="v2-flow-step">
                     <span>2</span>
                     <b>Work Board Brief</b>
-                    <p>Read client specifications and check evaluation rubric criteria.</p>
+                    <p>Read client specifications, check evaluation rubric criteria, and attach code.</p>
                   </div>
                   <div className="v2-flow-step">
                     <span>3</span>
-                    <b>Attach Artifacts</b>
-                    <p>Link your PR, test traces, or schema migration files.</p>
+                    <b>Faculty Verification</b>
+                    <p>Coordinators (Ajitha V S / Krishnasree K) review and grade your pull request.</p>
                   </div>
                   <div className="v2-flow-step">
                     <span>4</span>
-                    <b>Faculty Sign-Off</b>
-                    <p>Submit for review; accepted work awards Level points on Dashboard!</p>
+                    <b>Published to Portfolio</b>
+                    <p>Accepted deliverables are permanently archived in your Evidence & Portfolio!</p>
                   </div>
                 </div>
               </div>

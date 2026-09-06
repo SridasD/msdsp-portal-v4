@@ -134,10 +134,11 @@ test("renders progression ribbon, expands quest points, and opens student guide 
   await expect(page.getByText("Academic Result (82.4%)")).toBeVisible();
   await expect(page.getByText("Attendance (DUK@360 ERP)")).toBeVisible();
 
-  // Switch to Tab 4: Dashboard vs Work Board
+  // Switch to Tab 4: Dashboard vs Work Board vs Portfolio
   await page.getByRole("tab", { name: /4\. Dashboard vs Work Board/ }).click();
   await expect(page.getByText("Your Strategic Command Center (Cockpit)")).toBeVisible();
   await expect(page.getByText("Your Engineering Execution Workbench (Studio)")).toBeVisible();
+  await expect(page.getByText("Your Permanent Verified Showcase (Vault)")).toBeVisible();
   await expect(page.getByText("The 4-Step Assignment Cycle:")).toBeVisible();
 
   // Close modal via Escape
@@ -149,8 +150,7 @@ test("demystifies Work Board connection to Dashboard and supports cross-navigati
   await openPortal(page);
 
   // 1. Verify Work Board helper banner on Focused Dashboard
-  await expect(page.getByText("Connected to your Work Board")).toBeVisible();
-  await expect(page.getByText("These sprint tasks represent assignments on your Work Board.")).toBeVisible();
+  await expect(page.getByText("Connected to your Work Board & Portfolio")).toBeVisible();
 
   // 2. Click "Execute on Work Board" from urgent hero card
   const heroWbBtn = page.getByRole("button", { name: "Execute on Work Board" });
@@ -159,8 +159,8 @@ test("demystifies Work Board connection to Dashboard and supports cross-navigati
 
   // 3. Verify landing on Work Board with DS-907 dynamically selected
   await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
-  await expect(page.getByText("NEW STUDENT REFERENCE · WORK BOARD WORKFLOW")).toBeVisible();
-  await expect(page.getByText("Your Engineering Execution Workbench")).toBeVisible();
+  await expect(page.getByText("NEW STUDENT REFERENCE · WORK BOARD VS PORTFOLIO")).toBeVisible();
+  await expect(page.getByText("Your Active Engineering Execution Workbench")).toBeVisible();
   await expect(page.getByText("1. Read Brief")).toBeVisible();
   await expect(page.getByText("4. Submit for Review")).toBeVisible();
   await expect(page.getByText("SELECTED ASSIGNMENT · DS-907")).toBeVisible();
@@ -177,6 +177,39 @@ test("demystifies Work Board connection to Dashboard and supports cross-navigati
   await returnBtn.click();
   await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Overview");
   await expect(page.getByText("TEAM NORTHSTAR · COHORT COLLABORATION")).toBeVisible();
+});
+
+test("demystifies Evidence & Portfolio vs Work Board and connects quality gaps to Work Board", async ({ page }) => {
+  await openPortal(page);
+
+  // 1. Navigate to Evidence & Portfolio (handling mobile drawer if present)
+  const mobileMenu = page.getByRole("button", { name: "Open navigation" });
+  if (await mobileMenu.isVisible()) {
+    await mobileMenu.click();
+  }
+  await page.getByRole("button", { name: "Evidence & Portfolio" }).click();
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Evidence & Portfolio");
+
+  // 2. Verify onboarding banner explaining Portfolio vs Work Board
+  await expect(page.getByText("NEW STUDENT REFERENCE · PORTFOLIO VS WORK BOARD")).toBeVisible();
+  await expect(page.getByText("Your Cumulative Verified Engineering Showcase")).toBeVisible();
+  await expect(page.getByText("1. Dashboard: Cockpit & Alerts")).toBeVisible();
+  await expect(page.getByText("2. Work Board: Active Execution")).toBeVisible();
+  await expect(page.getByText("3. Portfolio: Permanent Showcase")).toBeVisible();
+
+  // 3. Filter artifacts
+  await page.getByRole("button", { name: /Quality Gaps/ }).click();
+  await expect(page.getByText("Playwright end-to-end report")).toBeVisible();
+
+  // 4. Click direct action to fix quality gap on Work Board
+  const fixBtn = page.getByRole("button", { name: /Fix on Work Board \(DS-907\)/ });
+  await expect(fixBtn).toBeVisible();
+  await fixBtn.click();
+
+  // 5. Verify it jumps directly to Work Board with DS-907 loaded!
+  await expect(page.locator("#workspace")).toHaveAttribute("aria-label", "Student workspace: Work Board");
+  await expect(page.getByText("SELECTED ASSIGNMENT · DS-907")).toBeVisible();
+  await expect(page.getByText("Can you stabilize the failing E2E quality gates under concurrent load?")).toBeVisible();
 });
 
 test("supports collapsing sidebar into icons-only mode and restoring it", async ({ page }, testInfo) => {

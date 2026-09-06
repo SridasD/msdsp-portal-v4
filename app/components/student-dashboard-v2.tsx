@@ -303,26 +303,36 @@ export function StudentDashboardV2({ cycle, openEvidence, notify, onSwitchToClas
               meta="3 active items"
             />
 
-            {/* Work Board Connection Banner for New Students */}
+            {/* Work Board & Portfolio Connection Banner for New Students */}
             <div className="v2-workboard-helper-banner">
               <div className="v2-wb-help-text">
                 <Icon name="brief" />
                 <div>
-                  <b>Connected to your Work Board</b>
+                  <b>Connected to your Work Board & Portfolio</b>
                   <p>
-                    These sprint tasks represent assignments on your <strong>Work Board</strong>. The Work Board is where you read the client brief, review rubric criteria, attach code artifacts, and submit for faculty review.
+                    These sprint tasks represent active assignments on your <strong>Work Board</strong>. Once accepted by faculty, your deliverables are permanently published to your <strong>Evidence & Portfolio</strong>.
                   </p>
                 </div>
               </div>
               {onNavigate && (
-                <button
-                  type="button"
-                  className="v2-wb-jump-btn"
-                  onClick={() => onNavigate("Work Board", "DS-907")}
-                  title="Navigate to the full Work Board"
-                >
-                  Open Work Board →
-                </button>
+                <div className="v2-wb-banner-actions">
+                  <button
+                    type="button"
+                    className="v2-wb-jump-btn"
+                    onClick={() => onNavigate("Work Board", "DS-907")}
+                    title="Navigate to the full Work Board"
+                  >
+                    Open Work Board →
+                  </button>
+                  <button
+                    type="button"
+                    className="v2-wb-jump-btn secondary"
+                    onClick={() => onNavigate("Evidence & Portfolio")}
+                    title="Navigate to your Evidence Portfolio"
+                  >
+                    View Portfolio →
+                  </button>
+                </div>
               )}
             </div>
 
