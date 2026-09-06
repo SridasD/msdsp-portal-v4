@@ -119,10 +119,14 @@ test("keeps core navigation and evidence dialog accessible", async () => {
   const source = await readFile(new URL("../app/portal.tsx", import.meta.url), "utf8");
   const dialog = await readFile(new URL("../app/components/evidence-modal.tsx", import.meta.url), "utf8");
   for (const contract of [
+    'className="skip-link"',
+    'href="#workspace"',
+    'id="workspace"',
     'aria-controls="primary-navigation"',
     'aria-label="Workspace navigation"',
     'aria-current={page === item ? "page" : undefined}',
     'aria-live="polite"',
+    'document.addEventListener("pointerdown", closeOutsideMenus)',
   ]) {
     assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }

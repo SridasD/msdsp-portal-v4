@@ -69,6 +69,9 @@ export default function Portal() {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
+  const workspaceRef = useRef<HTMLElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const cycleMenuRef = useRef<HTMLDivElement>(null);
   const cycle = cycles.find((item) => item.id === cycleId) ?? cycles[1];
   const navItems = workspaceNavigation[role];
   const roleProfile = role === "student" ? { initials: "AR", name: "Anakha Rajesh", title: "Postgraduate Student" } : role === "courseHead" ? { initials: "AK", name: "Dr. Ajith Kumar", title: "Course Head" } : mentorKind === "domain" ? { initials: "AV", name: "Ajitha V S", title: "Domain Mentor · QA & Testing" } : { initials: "DM", name: "Diju M", title: "Student-Team Mentor · Code Review" };
@@ -105,19 +108,30 @@ export default function Portal() {
     window.addEventListener("keydown", handleKeyboard);
     return () => window.removeEventListener("keydown", handleKeyboard);
   }, []);
+  useEffect(() => {
+    const closeOutsideMenus = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!profileMenuRef.current?.contains(target)) setProfileOpen(false);
+      if (!cycleMenuRef.current?.contains(target)) setCycleOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOutsideMenus);
+    return () => document.removeEventListener("pointerdown", closeOutsideMenus);
+  }, []);
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
-  const changeRole = (next: Role) => { setRole(next); setPage("Overview"); setMobileOpen(false); };
-  const changePage = (next: string) => { setPage(next); setMobileOpen(false); };
+  const focusWorkspace = () => window.requestAnimationFrame(() => workspaceRef.current?.focus());
+  const changeRole = (next: Role) => { setRole(next); setPage("Overview"); setMobileOpen(false); focusWorkspace(); };
+  const changePage = (next: string) => { setPage(next); setMobileOpen(false); focusWorkspace(); };
 
   return <main className="app-shell">
+    <a className="skip-link" href="#workspace" onClick={focusWorkspace}>Skip to workspace</a>
     <header className="topbar">
       <button type="button" className="mobile-menu" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} aria-controls="primary-navigation" onClick={() => setMobileOpen(!mobileOpen)}><Icon name="menu" /></button>
       <div className="brand" aria-label="MSDSP learning portal"><span className="brand-mark">DUK</span><div><b>MSDSP</b><small>Applied Learning Portal</small></div></div>
       <div className="programme-context"><span>Master of Science</span><b>Data Science & Product Development</b></div>
       <label className="global-search"><Icon name="search" /><input ref={searchRef} type="search" aria-label="Search portal" placeholder="Search assignments, evidence, outcomes…" /><kbd aria-hidden="true">Ctrl K</kbd></label>
       <button className="top-icon" aria-label="Notifications" onClick={() => notify("Three academic updates are unread")}><Icon name="bell" /><i>3</i></button>
-      <div className="profile-wrap"><button className="profile" aria-haspopup="menu" aria-controls="profile-menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)}><span>{roleProfile.initials}</span><div><b>{roleProfile.name}</b><small>{roleProfile.title}</small></div><Icon name="chevron" /></button>{profileOpen && <div id="profile-menu" role="menu" className="popover profile-menu"><p>Appearance</p><div className="theme-options">{(["light", "dark", "system"] as Theme[]).map((item) => <button role="menuitemradio" aria-checked={theme === item} key={item} className={theme === item ? "selected" : ""} onClick={() => { setTheme(item); setProfileOpen(false); }}>{item}</button>)}</div><button role="menuitem" onClick={() => notify("Profile opened")}><Icon name="user" />Profile & preferences</button></div>}</div>
+      <div ref={profileMenuRef} className="profile-wrap"><button className="profile" aria-haspopup="menu" aria-controls="profile-menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)}><span>{roleProfile.initials}</span><div><b>{roleProfile.name}</b><small>{roleProfile.title}</small></div><Icon name="chevron" /></button>{profileOpen && <div id="profile-menu" role="menu" className="popover profile-menu"><p>Appearance</p><div className="theme-options">{(["light", "dark", "system"] as Theme[]).map((item) => <button role="menuitemradio" aria-checked={theme === item} key={item} className={theme === item ? "selected" : ""} onClick={() => { setTheme(item); setProfileOpen(false); }}>{item}</button>)}</div><button role="menuitem" onClick={() => notify("Profile opened")}><Icon name="user" />Profile & preferences</button></div>}</div>
     </header>
 
     <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
@@ -131,8 +145,8 @@ export default function Portal() {
     </aside>
     {mobileOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
 
-    <section className="workspace">
-      <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
+    <section ref={workspaceRef} id="workspace" tabIndex={-1} aria-label={`${role === "courseHead" ? "Course Head" : role === "mentor" ? "Mentor" : "Student"} workspace: ${page}`} className="workspace">
+      <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div ref={cycleMenuRef} className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
       <div key={`${role}-${mentorKind}-${page}-${cycleId}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={() => setEvidenceOpen(true)} notify={notify} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
     </section>
     {evidenceOpen && <EvidenceModal close={() => setEvidenceOpen(false)} save={() => { setEvidenceOpen(false); notify("Evidence saved to DS-904"); }} />}

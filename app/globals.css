@@ -61,6 +61,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 svg { width: 20px; height: 20px; flex: 0 0 auto; }
 
 .app-shell { min-height: 100vh; }
+.skip-link { position: fixed; z-index: 200; top: 8px; left: 12px; transform: translateY(-150%); border-radius: var(--radius-control); padding: 9px 12px; color: #fff; background: var(--indigo-dark); font-weight: 700; text-decoration: none; transition: transform .15s ease; }
+.skip-link:focus { transform: translateY(0); }
 .topbar { position: fixed; z-index: 40; inset: 0 0 auto; height: 74px; display: flex; align-items: center; gap: 22px; padding: 0 24px; background: color-mix(in srgb, var(--surface) 94%, transparent); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
 .brand { width: 236px; display: flex; align-items: center; gap: 11px; }
 .brand-mark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; color: white; background: linear-gradient(145deg, #5065e8, #26369c); box-shadow: 0 8px 20px rgba(64, 86, 216, .24); font-size: 12px; font-weight: 800; letter-spacing: .03em; }
@@ -118,6 +120,7 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .prototype-label i { width: 7px; height: 7px; border-radius: 50%; background: #49c59d; box-shadow: 0 0 0 4px rgba(73, 197, 157, .09); }
 
 .workspace { min-height: 100vh; margin-left: 264px; padding: 96px clamp(22px, 3vw, 48px) 54px; }
+.workspace:focus { outline: none; }
 .workspace-bar { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
 .breadcrumb { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
 .breadcrumb svg { width: 13px; }
