@@ -50,3 +50,4 @@ Audit of the current single-route React/Vinext portal across Student, Course Hea
 - Extracted the evidence dialog into a reusable component with focus containment, focus restoration, specific validation guidance, and constrained prototype file types.
 - Added programmatic state to workspace navigation, role controls, profile options, notifications, and Mermaid loading/error output.
 - Replaced key Student, Course Head, and Mentor horizontal tables with stacked mobile records while retaining desktop layouts.
+- Added a server route boundary in `app/page.tsx` and isolated interactive state in `app/portal.tsx`, preparing role workspaces for incremental code splitting.

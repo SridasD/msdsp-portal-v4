@@ -66,7 +66,7 @@ test("renders development preview metadata", async () => {
 });
 
 test("uses the approved five-student prototype cohort", async () => {
-  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/portal.tsx", import.meta.url), "utf8");
   for (const name of ["Alfin", "Anakha Rajesh", "Annamma", "Annrosna", "Dhanush Girish"]) {
     assert.match(source, new RegExp(name));
   }
@@ -74,7 +74,7 @@ test("uses the approved five-student prototype cohort", async () => {
 });
 
 test("separates mentor responsibilities and operational workflow", async () => {
-  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/portal.tsx", import.meta.url), "utf8");
   for (const label of [
     "Domain Mentor · QA & Testing",
     "Student-Team Mentor · Code Review",
@@ -93,7 +93,7 @@ test("separates mentor responsibilities and operational workflow", async () => {
 });
 
 test("documents the Course Head programme operating model", async () => {
-  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/portal.tsx", import.meta.url), "utf8");
   for (const label of [
     "Programme Workflow",
     "Courses carry credits. Levels organise delivery. Sprints organise work.",
@@ -116,7 +116,7 @@ test("documents the Course Head programme operating model", async () => {
 });
 
 test("keeps core navigation and evidence dialog accessible", async () => {
-  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/portal.tsx", import.meta.url), "utf8");
   const dialog = await readFile(new URL("../app/components/evidence-modal.tsx", import.meta.url), "utf8");
   for (const contract of [
     'aria-controls="primary-navigation"',
@@ -132,7 +132,7 @@ test("keeps core navigation and evidence dialog accessible", async () => {
 });
 
 test("labels unresolved programme rules as provisional configuration", async () => {
-  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../app/portal.tsx", import.meta.url), "utf8");
   const config = await readFile(new URL("../app/portal-config.ts", import.meta.url), "utf8");
   assert.match(source, /Credit totals remain subject to Programme Board confirmation/);
   assert.match(source, /programmeRules\.creditTotal\.decisionId/);
