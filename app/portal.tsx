@@ -162,16 +162,6 @@ export default function Portal() {
         <span className="collapse-text">{sidebarCollapsed ? "" : "Collapse sidebar"}</span>
       </button>
 
-      <div className="cycle-mini" title={sidebarCollapsed ? `${cycle.id} · Level ${cycle.level} (${cycle.progress}%)` : undefined}>
-        <div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div>
-        <b>{cycle.id} · Official Level {cycle.level}</b>
-        <p>{cycle.title}</p>
-        <div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div>
-      </div>
-      <div className="attendance-note" title={sidebarCollapsed ? "Attendance is external in DUK@360" : undefined}>
-        <Icon name="shield" />
-        <div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div>
-      </div>
       <small className="prototype-label" title={sidebarCollapsed ? "Interactive academic prototype" : undefined}><i /> <span className="prototype-text">Interactive academic prototype</span></small>
     </aside>
     {mobileOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
