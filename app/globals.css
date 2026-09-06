@@ -7,7 +7,7 @@
   --nav-2: #eef4f2;
   --text: #162522;
   --muted: #5e6f6b;
-  --subtle: #788984;
+  --subtle: #667772;
   --line: #dce4e1;
   --line-strong: #c7d3cf;
   --indigo: #176b67;
@@ -196,8 +196,10 @@ svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .level-route button > i { width: 28px; height: 28px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: #aebbd4; background: rgba(255,255,255,.08); font-size: 9px; font-style: normal; font-weight: 800; }
 .level-route button.complete > i { color: #10253d; background: #65d9bd; }
 .level-route button.current { border-color: rgba(138,157,255,.7); background: rgba(105,123,235,.26); box-shadow: 0 0 0 4px rgba(105,123,235,.08); }
-.level-route button.current > i { color: white; background: #788bff; animation: breathe 2.6s ease-in-out infinite; }
-.level-route button.locked { opacity: .58; }
+.level-route button.current > i { color: white; background: #5264d6; animation: breathe 2.6s ease-in-out infinite; }
+.level-route button.locked { color: #c8d3e5; background: rgba(255,255,255,.035); }
+.level-route button.locked > i { color: #c8d3e5; }
+.level-route button.locked small { color: #c8d3e5; }
 .level-route svg { width: 13px; }
 .level-route span { display: flex; flex-direction: column; }
 .level-route b { font-size: 10px; }
