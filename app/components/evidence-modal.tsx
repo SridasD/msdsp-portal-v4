@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 
-export function EvidenceModal({ close, save }: { close: () => void; save: () => void }) {
+export function EvidenceModal({ close, save, defaultAssignment }: { close: () => void; save: () => void; defaultAssignment?: string }) {
   const dialogRef = useRef<HTMLFormElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -35,7 +35,7 @@ export function EvidenceModal({ close, save }: { close: () => void; save: () => 
       <span className="eyebrow">RECORD LEARNING EVIDENCE</span>
       <h2 id={titleId}>Connect engineering work to an academic claim</h2>
       <p id={descriptionId}>Describe what the artifact proves, how it was verified and which outcome it supports. This records learning work—not attendance or time spent.</p>
-      <label>Related assignment<select><option>DS-904 · Full-stack integration and test readiness</option><option>DS-905 · API contract and PostgreSQL integration</option><option>DS-907 · End-to-end quality-gate revision</option></select></label>
+      <label>Related assignment<select defaultValue={defaultAssignment?.startsWith("DS-907") ? "DS-907 · End-to-end quality-gate revision" : defaultAssignment?.startsWith("DS-905") ? "DS-905 · API contract and PostgreSQL integration" : "DS-904 · Full-stack integration and test readiness"}><option>DS-904 · Full-stack integration and test readiness</option><option>DS-905 · API contract and PostgreSQL integration</option><option>DS-907 · End-to-end quality-gate revision</option></select></label>
       <label>Evidence category<select><option>Code or pull request</option><option>API or data contract</option><option>Automated test report</option><option>Technical documentation</option><option>Critical reflection</option></select></label>
       <label>Academic claim<textarea required minLength={30} aria-describedby={claimHelpId} placeholder="Explain the decision, implementation, verification result or professional competency this evidence demonstrates…" /><small id={claimHelpId}>Include the decision or outcome, the verification method, and what the artifact demonstrates.</small></label>
       <label className="upload-box"><input type="file" accept=".pdf,.zip,.json,.yaml,.yml,.md,.txt,.doc,.docx" /><span className="upload-symbol" aria-hidden="true">↑</span><b>Select evidence file</b><small>Prototype only · PDF, source archive, test report, specification or document</small></label>

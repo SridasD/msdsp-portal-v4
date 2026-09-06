@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { EvidenceModal } from "./components/evidence-modal";
 import { FilterBar, Icon, Metric, PageHeader, PanelHeading, ScoreRow } from "./components/portal-primitives";
+import { StudentDashboardV2 } from "./components/student-dashboard-v2";
 import { coordinators, levelCoordination, semesterCoordination } from "./coordination-data";
 import { academicComponents, cycles, levelNinePoints, programmeRules, prototypeCohort, sprintData, workspaceIcons, workspaceNavigation, type Cycle, type MentorKind, type Role, type Theme } from "./portal-config";
 
@@ -16,6 +17,10 @@ export default function Portal() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceAssignment, setEvidenceAssignment] = useState<string | undefined>();
+  const [studentDashboardMode, setStudentDashboardMode] = useState<"v2" | "classic">("classic");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("DS-907");
   const [toast, setToast] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const appShellRef = useRef<HTMLElement>(null);
@@ -31,8 +36,16 @@ export default function Portal() {
     const restore = window.setTimeout(() => {
       const storedTheme = localStorage.getItem("msdsp-theme") as Theme | null;
       const storedCycle = localStorage.getItem("msdsp-cycle");
+      const storedMode = localStorage.getItem("msdsp-student-dashboard-mode") as "v2" | "classic" | null;
+      const storedSidebar = localStorage.getItem("msdsp-sidebar-collapsed");
       if (storedTheme) setTheme(storedTheme);
       if (storedCycle && cycles.some((item) => item.id === storedCycle)) setCycleId(storedCycle);
+      if (storedSidebar === "true") setSidebarCollapsed(true);
+      if (storedMode) {
+        setStudentDashboardMode(storedMode);
+      } else {
+        setStudentDashboardMode("v2");
+      }
     }, 0);
     return () => window.clearTimeout(restore);
   }, []);
@@ -72,9 +85,26 @@ export default function Portal() {
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const focusWorkspace = () => window.requestAnimationFrame(() => workspaceRef.current?.focus());
   const changeRole = (next: Role) => { setRole(next); setPage("Overview"); setMobileOpen(false); focusWorkspace(); };
-  const changePage = (next: string) => { setPage(next); setMobileOpen(false); focusWorkspace(); };
+  const changePage = (next: string, assignmentId?: string) => {
+    setPage(next);
+    if (assignmentId) setSelectedAssignmentId(assignmentId);
+    setMobileOpen(false);
+    focusWorkspace();
+  };
+  const handleOpenEvidence = (assignment?: string) => { setEvidenceAssignment(assignment); setEvidenceOpen(true); };
+  const handleDashboardModeChange = (mode: "v2" | "classic") => {
+    setStudentDashboardMode(mode);
+    localStorage.setItem("msdsp-student-dashboard-mode", mode);
+    notify(mode === "v2" ? "Focused Dashboard (v2) activated" : "Classic Overview activated");
+  };
+  const handleToggleSidebar = () => {
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    localStorage.setItem("msdsp-sidebar-collapsed", String(next));
+    notify(next ? "Sidebar collapsed (icons only)" : "Sidebar expanded");
+  };
 
-  return <main ref={appShellRef} className="app-shell" data-hydrated="false">
+  return <main ref={appShellRef} className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`} data-hydrated="false">
     <a className="skip-link" href="#workspace" onClick={focusWorkspace}>Skip to workspace</a>
     <header className="topbar">
       <button type="button" className="mobile-menu" aria-label={mobileOpen ? "Close navigation" : "Open navigation"} aria-expanded={mobileOpen} aria-controls="primary-navigation" onClick={() => setMobileOpen(!mobileOpen)}><Icon name="menu" /></button>
@@ -85,35 +115,110 @@ export default function Portal() {
       <div ref={profileMenuRef} className="profile-wrap"><button className="profile" aria-haspopup="menu" aria-controls="profile-menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)}><span>{roleProfile.initials}</span><div><b>{roleProfile.name}</b><small>{roleProfile.title}</small></div><Icon name="chevron" /></button>{profileOpen && <div id="profile-menu" role="menu" className="popover profile-menu"><p>Appearance</p><div className="theme-options">{(["light", "dark", "system"] as Theme[]).map((item) => <button role="menuitemradio" aria-checked={theme === item} key={item} className={theme === item ? "selected" : ""} onClick={() => { setTheme(item); setProfileOpen(false); }}>{item}</button>)}</div><button role="menuitem" onClick={() => notify("Profile opened")}><Icon name="user" />Profile & preferences</button></div>}</div>
     </header>
 
-    <aside className={`sidebar ${mobileOpen ? "mobile-open" : ""}`}>
-      <div className="role-switch" role="group" aria-label="Prototype role"><button type="button" aria-pressed={role === "student"} className={role === "student" ? "active" : ""} onClick={() => changeRole("student")}>Student</button><button type="button" aria-pressed={role === "courseHead"} className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")}>Course Head</button><button type="button" aria-pressed={role === "mentor"} className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")}>Mentor</button></div>
-      {role === "mentor" && <div className="mentor-persona-switch" aria-label="Mentor responsibility"><span>MENTOR RESPONSIBILITY</span><div><button className={mentorKind === "domain" ? "active" : ""} onClick={() => { setMentorKind("domain"); setPage("Overview"); }}>Domain Mentor</button><button className={mentorKind === "team" ? "active" : ""} onClick={() => { setMentorKind("team"); setPage("Overview"); }}>Team Mentor</button></div></div>}
+    <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`} aria-label="Sidebar navigation">
+      <div className="role-switch" role="group" aria-label="Prototype role">
+        <button type="button" aria-pressed={role === "student"} className={role === "student" ? "active" : ""} onClick={() => changeRole("student")} title="Student Workspace">
+          <span className="role-full">Student</span>
+          <span className="role-short" aria-hidden="true">S</span>
+        </button>
+        <button type="button" aria-pressed={role === "courseHead"} className={role === "courseHead" ? "active" : ""} onClick={() => changeRole("courseHead")} title="Course Head Workspace">
+          <span className="role-full">Course Head</span>
+          <span className="role-short" aria-hidden="true">CH</span>
+        </button>
+        <button type="button" aria-pressed={role === "mentor"} className={role === "mentor" ? "active" : ""} onClick={() => changeRole("mentor")} title="Mentor Workspace">
+          <span className="role-full">Mentor</span>
+          <span className="role-short" aria-hidden="true">M</span>
+        </button>
+      </div>
+      {role === "mentor" && !sidebarCollapsed && <div className="mentor-persona-switch" aria-label="Mentor responsibility"><span>MENTOR RESPONSIBILITY</span><div><button className={mentorKind === "domain" ? "active" : ""} onClick={() => { setMentorKind("domain"); setPage("Overview"); }}>Domain Mentor</button><button className={mentorKind === "team" ? "active" : ""} onClick={() => { setMentorKind("team"); setPage("Overview"); }}>Team Mentor</button></div></div>}
       <p className="nav-label">{role === "student" ? "LEARNING WORKSPACE" : role === "courseHead" ? "COURSE HEAD WORKSPACE" : "MENTOR WORKSPACE"}</p>
-      <nav id="primary-navigation" aria-label="Workspace navigation">{navItems.map((item) => <button type="button" key={item} aria-current={page === item ? "page" : undefined} className={page === item ? "active" : ""} onClick={() => changePage(item)}><Icon name={workspaceIcons[item] ?? "grid"} />{item}{item === "Activity Review" && <em aria-label="14 items">14</em>}</button>)}</nav>
-      <div className="cycle-mini"><div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div><b>{cycle.id} · Official Level {cycle.level}</b><p>{cycle.title}</p><div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div></div>
-      <div className="attendance-note"><Icon name="shield" /><div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div></div>
-      <small className="prototype-label"><i /> Interactive academic prototype</small>
+      <nav id="primary-navigation" aria-label="Workspace navigation">
+        {navItems.map((item) => (
+          <button
+            type="button"
+            key={item}
+            aria-current={page === item ? "page" : undefined}
+            className={page === item ? "active" : ""}
+            onClick={() => changePage(item)}
+            title={item}
+          >
+            <Icon name={workspaceIcons[item] ?? "grid"} />
+            <span className="nav-text">{item}</span>
+            {item === "Activity Review" && <em aria-label="14 items">14</em>}
+          </button>
+        ))}
+      </nav>
+
+      {/* Sidebar Collapse Toggle Button */}
+      <button
+        type="button"
+        className="sidebar-collapse-toggle"
+        aria-label={sidebarCollapsed ? "Expand sidebar navigation" : "Collapse sidebar to icons only"}
+        aria-expanded={!sidebarCollapsed}
+        title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar to icons only"}
+        onClick={handleToggleSidebar}
+      >
+        <Icon name="chevron" />
+        <span className="collapse-text">{sidebarCollapsed ? "" : "Collapse sidebar"}</span>
+      </button>
+
+      <div className="cycle-mini" title={sidebarCollapsed ? `${cycle.id} · Level ${cycle.level} (${cycle.progress}%)` : undefined}>
+        <div><small>LEVEL PROGRESS</small><span>{cycle.progress}%</span></div>
+        <b>{cycle.id} · Official Level {cycle.level}</b>
+        <p>{cycle.title}</p>
+        <div className="progress"><i style={{ width: `${cycle.progress}%` }} /></div>
+      </div>
+      <div className="attendance-note" title={sidebarCollapsed ? "Attendance is external in DUK@360" : undefined}>
+        <Icon name="shield" />
+        <div><b>Attendance is external</b><p>DUK@360 remains the authoritative attendance system.</p></div>
+      </div>
+      <small className="prototype-label" title={sidebarCollapsed ? "Interactive academic prototype" : undefined}><i /> <span className="prototype-text">Interactive academic prototype</span></small>
     </aside>
     {mobileOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}
 
     <section ref={workspaceRef} id="workspace" tabIndex={-1} aria-label={`${role === "courseHead" ? "Course Head" : role === "mentor" ? "Mentor" : "Student"} workspace: ${page}`} className="workspace">
       <div className="workspace-bar"><div className="breadcrumb"><span>{role === "student" ? "Student" : role === "courseHead" ? "Course Head" : "Mentor"}</span><Icon name="chevron" /><b>{page}</b></div><div ref={cycleMenuRef} className="cycle-selector-wrap"><button className="cycle-selector" aria-haspopup="listbox" aria-controls="cycle-menu" aria-expanded={cycleOpen} onClick={() => setCycleOpen(!cycleOpen)}><span className="cycle-code">{cycle.id}</span><span><small>{cycle.semester} · Official Level {cycle.level}</small><b>{cycle.title}</b></span><em className={`status ${cycle.status.toLowerCase()}`}>{cycle.status}</em><Icon name="chevron" /></button>{cycleOpen && <div id="cycle-menu" role="listbox" aria-label="Learning Cycle" className="popover cycle-menu"><p>SELECT LEARNING CYCLE</p>{cycles.map((item) => <button role="option" aria-selected={item.id === cycleId} key={item.id} className={item.id === cycleId ? "selected" : ""} onClick={() => { setCycleId(item.id); setCycleOpen(false); notify(`${item.id} selected`); }}><span className="cycle-code">{item.id}</span><span><b>{item.title}</b><small>{item.semester} · Level {item.level} · {item.weeks}</small></span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i></button>)}</div>}</div></div>
-      <div key={`${role}-${mentorKind}-${page}-${cycleId}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={() => setEvidenceOpen(true)} notify={notify} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
+      <div key={`${role}-${mentorKind}-${page}-${cycleId}-${studentDashboardMode}`} className="page-enter">{role === "student" ? <StudentWorkspace page={page} cycle={cycle} openEvidence={handleOpenEvidence} notify={notify} dashboardMode={studentDashboardMode} setDashboardMode={handleDashboardModeChange} onNavigate={changePage} selectedAssignmentId={selectedAssignmentId} setSelectedAssignmentId={setSelectedAssignmentId} /> : role === "courseHead" ? <FacultyWorkspace page={page} cycle={cycle} notify={notify} /> : <MentorWorkspace page={page} cycle={cycle} mentorKind={mentorKind} notify={notify} />}</div>
     </section>
-    {evidenceOpen && <EvidenceModal close={() => setEvidenceOpen(false)} save={() => { setEvidenceOpen(false); notify("Evidence saved to DS-904"); }} />}
+    {evidenceOpen && <EvidenceModal defaultAssignment={evidenceAssignment} close={() => { setEvidenceOpen(false); setEvidenceAssignment(undefined); }} save={() => { setEvidenceOpen(false); notify(`Evidence saved to ${evidenceAssignment ?? "DS-904"}`); setEvidenceAssignment(undefined); }} />}
     <div className="toast-region" aria-live="polite" aria-atomic="true">{toast && <div className="toast"><Icon name="check" />{toast}</div>}</div>
   </main>;
 }
 
-function StudentWorkspace({ page, cycle, openEvidence, notify }: { page: string; cycle: Cycle; openEvidence: () => void; notify: (message: string) => void }) {
-  if (page === "Work Board") return <Workboard openEvidence={openEvidence} notify={notify} />;
-  if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={openEvidence} notify={notify} />;
-  if (page === "Skills & Outcomes") return <OutcomesPage />;
-  if (page === "Faculty Feedback") return <FeedbackPage notify={notify} />;
-  if (page === "Calendar") return <StudentCalendar notify={notify} />;
-  if (page === "Performance & Results") return <PerformancePage />;
+function StudentWorkspace({ page, cycle, openEvidence, notify, dashboardMode, setDashboardMode, onNavigate, selectedAssignmentId, setSelectedAssignmentId }: { page: string; cycle: Cycle; openEvidence: (assignment?: string) => void; notify: (message: string) => void; dashboardMode: "v2" | "classic"; setDashboardMode: (mode: "v2" | "classic") => void; onNavigate: (page: string, assignmentId?: string) => void; selectedAssignmentId: string; setSelectedAssignmentId: (id: string) => void }) {
+  if (page === "Work Board") return <Workboard openEvidence={() => openEvidence(selectedAssignmentId)} notify={notify} onNavigate={onNavigate} selectedAssignmentId={selectedAssignmentId} onSelectAssignment={setSelectedAssignmentId} />;
+  if (page === "Evidence & Portfolio") return <EvidenceLibrary openEvidence={() => openEvidence()} notify={notify} onNavigate={onNavigate} />;
+  if (page === "Skills & Outcomes") return <OutcomesPage notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} />;
+  if (page === "Faculty Feedback") return <FeedbackPage notify={notify} onNavigate={onNavigate} openEvidence={openEvidence} selectedAssignmentId={selectedAssignmentId} onSelectAssignment={setSelectedAssignmentId} />;
+  if (page === "Calendar") return <StudentCalendar notify={notify} onNavigate={onNavigate} />;
+  if (page === "Performance & Results") return <PerformancePage notify={notify} onNavigate={onNavigate} />;
   if (page === "Information Centre") return <StudentInformationCentre notify={notify} />;
-  return <StudentOverview cycle={cycle} openEvidence={openEvidence} notify={notify} />;
+  if (dashboardMode === "v2") {
+    return <StudentDashboardV2 cycle={cycle} openEvidence={openEvidence} notify={notify} onSwitchToClassic={() => setDashboardMode("classic")} onNavigate={onNavigate} />;
+  }
+  return <StudentOverviewWithToggle cycle={cycle} openEvidence={() => openEvidence()} notify={notify} onSwitchToV2={() => setDashboardMode("v2")} />;
+}
+
+function StudentOverviewWithToggle({ cycle, openEvidence, notify, onSwitchToV2 }: { cycle: Cycle; openEvidence: () => void; notify: (message: string) => void; onSwitchToV2: () => void }) {
+  return (
+    <>
+      <div className="v2-top-controls classic-banner">
+        <div className="v2-mode-selector" role="group" aria-label="Dashboard presentation style">
+          <span className="v2-mode-label">DASHBOARD VIEW:</span>
+          <button type="button" className="v2-mode-pill" aria-pressed="false" onClick={onSwitchToV2}>
+            <Icon name="target" /> Focused (v2)
+          </button>
+          <button type="button" className="v2-mode-pill active" aria-pressed="true">
+            <Icon name="grid" /> Classic Overview
+          </button>
+        </div>
+        <button type="button" className="v2-switch-btn" onClick={onSwitchToV2}>
+          Switch to Focused Dashboard (v2) →
+        </button>
+      </div>
+      <StudentOverview cycle={cycle} openEvidence={openEvidence} notify={notify} />
+    </>
+  );
 }
 
 function StudentOverview({ cycle, openEvidence, notify }: { cycle: Cycle; openEvidence: () => void; notify: (message: string) => void }) {
@@ -398,35 +503,1505 @@ function CourseCoordination({ notify }: { notify: (message: string) => void }) {
   </>;
 }
 
-function Workboard({ openEvidence, notify }: { openEvidence: () => void; notify: (message: string) => void }) {
+interface WorkboardAssignment {
+  id: string;
+  title: string;
+  role: string;
+  reviewer: string;
+  workflow: string;
+  evidenceCount: string;
+  reviewDate: string;
+  question: string;
+  summary: string;
+  cognitive: string;
+  stage: string;
+  requiredEvidence: string;
+  briefTitle: string;
+  briefDesc: string;
+  dependencies: string;
+  outcomes: string;
+  criteria: Array<[string, string]>;
+  artifacts: Array<[string, string]>;
+  history: Array<[string, string, string]>;
+}
+
+const WORKBOARD_ASSIGNMENTS: Record<string, WorkboardAssignment> = {
+  "DS-907": {
+    id: "DS-907",
+    title: "End-to-end quality-gate revision",
+    role: "Quality Engineer",
+    reviewer: "Ajitha V S",
+    workflow: "Revision required",
+    evidenceCount: "4 / 6",
+    reviewDate: "05 Sep (Urgent) · 20 Sep (Final)",
+    question: "Can you stabilize the failing E2E quality gates under concurrent load?",
+    summary: "Resolve token refresh and transaction rollback failures in Playwright, update the operational runbook, and attach verifiable execution traces.",
+    cognitive: "Analyze → Evaluate → Create",
+    stage: "Active experimentation",
+    requiredEvidence: "Playwright failure trace · corrected test script · updated runbook · PR review",
+    briefTitle: "Repair and defend automated quality-gate resilience",
+    briefDesc: "Ajitha V S identified two unstable test scenarios during Sprint 04 quality gate review: token refresh timeout under Firefox and non-idempotent rollback. Rerun full traces with video recording and link to the revised pull request.",
+    dependencies: "Docker Compose test environment · DUK@360 mock token service · Playwright v1.45",
+    outcomes: "PO4 (DevOps & Testing) · PSO4 (Secure & Quality Systems)",
+    criteria: [
+      ["Needs revision", "Workflow is unreliable, failure traces are incomplete or setup cannot be reproduced locally."],
+      ["Meets industry standard", "Token refresh and transaction rollback pass reliably in CI; traces and root-cause notes are attached."],
+      ["Exceeds expectations", "Automated retry policy, network throttling assertions and concurrency stress harness verified with zero regressions."]
+    ],
+    artifacts: [
+      ["Playwright E2E failure trace (v2)", "Revision required"],
+      ["Corrected Playwright script (PR-45)", "Under review"],
+      ["Token refresh idempotency test suite", "Draft"],
+      ["Transaction rollback verification report", "Draft"],
+      ["Local deployment runbook (v1.2)", "Accepted"]
+    ],
+    history: [
+      ["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios in Firefox and rollback paths."],
+      ["02 Sep · 14:15", "Quality gate evaluation", "QA coordinator review conducted on initial Sprint 04 pull request."],
+      ["01 Sep · 09:30", "Submission created", "Playwright report attached from Sprint 04 automated run."]
+    ]
+  },
+  "DS-904": {
+    id: "DS-904",
+    title: "Full-stack integration and test readiness",
+    role: "Full-Stack Engineer",
+    reviewer: "Krishnasree K",
+    workflow: "Faculty review",
+    evidenceCount: "5 / 7",
+    reviewDate: "14 September",
+    question: "Can the integrated product withstand a professional live demonstration?",
+    summary: "Connect the responsive client, versioned API and PostgreSQL data layer; prove priority workflows, failure handling, role boundaries and reproducible local operation.",
+    cognitive: "Analyze → Evaluate → Create",
+    stage: "Active experimentation",
+    requiredEvidence: "OpenAPI · PR · migrations · E2E report · runbook",
+    briefTitle: "Build and defend a reliable full-stack product slice",
+    briefDesc: "Deliver the authenticated project-submission journey across the Next.js client, versioned services and PostgreSQL. The solution must reproduce locally and demonstrate expected and failure paths.",
+    dependencies: "Approved API contract · mock identity adapter · PostgreSQL 16",
+    outcomes: "PO2 · PO3 · PO4 · PO8",
+    criteria: [
+      ["Needs revision", "Workflow is unreliable, evidence is incomplete or setup cannot be reproduced."],
+      ["Meets industry standard", "Priority and failure paths are verified, traceable and independently reproducible."],
+      ["Exceeds expectations", "Secure boundaries, observability and resilient recovery are justified with evidence."]
+    ],
+    artifacts: [
+      ["OpenAPI 3.1 contract", "Accepted"],
+      ["PR-42 · integration implementation", "Accepted"],
+      ["PostgreSQL migration set", "Under review"],
+      ["Playwright E2E trace", "Revision required"],
+      ["Local deployment runbook", "Accepted"]
+    ],
+    history: [
+      ["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios."],
+      ["01 Sep · 11:20", "Evidence reviewed", "OpenAPI contract and integration pull request accepted."],
+      ["30 Aug · 18:05", "Submission created", "Five professional artifacts linked to DS-904."]
+    ]
+  },
+  "DS-905": {
+    id: "DS-905",
+    title: "API contract and PostgreSQL integration",
+    role: "Backend Engineer",
+    reviewer: "Soorya S Kumar",
+    workflow: "Under review",
+    evidenceCount: "6 / 6",
+    reviewDate: "15 September",
+    question: "Are API contracts hardened with schema validation, transactions, and error contracts?",
+    summary: "Establish strict OpenAPI 3.1 specifications, idempotent database migrations, transaction rollback semantics, and structured HTTP error responses.",
+    cognitive: "Analyze → Evaluate → Create",
+    stage: "Concrete experience",
+    requiredEvidence: "OpenAPI 3.1 spec · Prisma/Drizzle migrations · Postman contract tests · DB seed script",
+    briefTitle: "Harden backend contracts and data integrity",
+    briefDesc: "Design and document all student and evaluation endpoints with versioning, pagination, and error schemas. Verify relational consistency in PostgreSQL.",
+    dependencies: "PostgreSQL 16 container · DUK@360 identity claims specification",
+    outcomes: "PO3 (Data Systems) · PSO1 (AI-Ready Systems)",
+    criteria: [
+      ["Needs revision", "Endpoints lack schema validation, unhandled exceptions leak stack traces, or migrations are not reversible."],
+      ["Meets industry standard", "All endpoints adhere strictly to OpenAPI 3.1 with standardized error responses and automated migration rollback."],
+      ["Exceeds expectations", "Database connection pooling, query indexing benchmarks, and audit trail tables implemented."]
+    ],
+    artifacts: [
+      ["OpenAPI 3.1 specification (v1.2)", "Accepted"],
+      ["Database migration script set", "Under review"],
+      ["Postman contract test collection", "Accepted"],
+      ["PostgreSQL transaction test harness", "Under review"],
+      ["Schema architecture decision record", "Accepted"]
+    ],
+    history: [
+      ["03 Sep · 10:15", "Contract submitted", "Soorya S Kumar commenced review of PostgreSQL migrations."],
+      ["01 Sep · 16:00", "Artifacts updated", "Added negative assertion tests to Postman collection."],
+      ["28 Aug · 12:30", "Submission created", "OpenAPI spec and migration scripts uploaded."]
+    ]
+  },
+  "DS-906": {
+    id: "DS-906",
+    title: "AWS SAA-C03 certification evidence",
+    role: "Cloud Associate",
+    reviewer: "Arun Nadh G",
+    workflow: "Verification pending",
+    evidenceCount: "2 / 3",
+    reviewDate: "18 September",
+    question: "Has professional cloud architectural competency been verified via external certification?",
+    summary: "Provide verifiable score reports and Credly badge validation for AWS Certified Solutions Architect - Associate (SAA-C03).",
+    cognitive: "Remember → Understand → Apply",
+    stage: "Reflective observation",
+    requiredEvidence: "Official score report PDF · Credly badge verification link · Candidate ID record",
+    briefTitle: "External industry cloud competency validation",
+    briefDesc: "Submit official AWS certification credentials. Faculty verifies the authenticity of the digital badge via Credly/AWS Certification portal.",
+    dependencies: "AWS Certification account · Credly public badge link",
+    outcomes: "PO2 (Cloud Architecture) · PO8 (Professional Delivery)",
+    criteria: [
+      ["Needs revision", "Verification link is invalid, score report is obscured, or certificate has expired."],
+      ["Meets industry standard", "Active AWS SAA-C03 certification verified via authenticated Credly badge link."],
+      ["Exceeds expectations", "Demonstrated hands-on CDK/Terraform infrastructure repository mapped to AWS architectural pillars."]
+    ],
+    artifacts: [
+      ["AWS SAA-C03 Score Report PDF", "Accepted"],
+      ["Credly Digital Badge verification link", "Verification pending"],
+      ["Infrastructure IaC mapping document", "Draft"]
+    ],
+    history: [
+      ["02 Sep · 11:00", "Verification submitted", "Credly badge link submitted for Arun Nadh G verification."],
+      ["29 Aug · 14:20", "Score report accepted", "Score report verified by faculty advisor."]
+    ]
+  }
+};
+
+function Workboard({
+  openEvidence,
+  notify,
+  onNavigate,
+  selectedAssignmentId = "DS-907",
+  onSelectAssignment,
+}: {
+  openEvidence: (assignment?: string) => void;
+  notify: (message: string) => void;
+  onNavigate?: (page: string, assignmentId?: string) => void;
+  selectedAssignmentId?: string;
+  onSelectAssignment?: (id: string) => void;
+}) {
   const [assignmentView, setAssignmentView] = useState("Brief");
-  const rows = [["DS-904", "Full-stack integration and test readiness", "Full-Stack Engineer", "Krishnasree K", "Faculty review", "5 / 7", "14 Sep"], ["DS-905", "API contract and PostgreSQL integration", "Backend Engineer", "Soorya S Kumar", "Under review", "6 / 6", "15 Sep"], ["DS-906", "AWS SAA-C03 certification evidence", "Cloud Associate", "Arun Nadh G", "Verification pending", "2 / 3", "18 Sep"], ["DS-907", "End-to-end quality-gate revision", "Quality Engineer", "Ajitha V S", "Revision required", "4 / 6", "20 Sep"]];
-  return <><PageHeader eyebrow="WORK BOARD · PROJECT-IMMERSIVE LEARNING" title="Full-stack assignments, Sprint work and evidence" description="Complete outcome-mapped engineering work with explicit contracts, dependencies, professional artifacts and faculty review." action="Record learning evidence" onAction={openEvidence} /><article className="panel mission-command"><div><span className="eyebrow">SELECTED ASSIGNMENT · DS-904</span><h2>Can the integrated product withstand a professional live demonstration?</h2><p>Connect the responsive client, versioned API and PostgreSQL data layer; prove priority workflows, failure handling, role boundaries and reproducible local operation.</p></div><dl><div><dt>Project role</dt><dd>Full-Stack Engineer</dd></div><div><dt>Cognitive focus</dt><dd>Analyze → Evaluate → Create</dd></div><div><dt>Learning stage</dt><dd>Active experimentation</dd></div><div><dt>Required evidence</dt><dd>OpenAPI · PR · migrations · E2E report · runbook</dd></div></dl></article>
-    <article className="panel assignment-workspace"><div className="assignment-tabs" role="tablist" aria-label="Assignment workspace">{["Brief", "Criteria", "Artifacts", "History"].map((item) => <button role="tab" aria-selected={assignmentView === item} className={assignmentView === item ? "active" : ""} key={item} onClick={() => setAssignmentView(item)}>{item}</button>)}</div>{assignmentView === "Brief" && <div className="assignment-view"><div><span className="eyebrow">CLIENT BRIEF</span><h3>Build and defend a reliable full-stack product slice</h3><p>Deliver the authenticated project-submission journey across the Next.js client, versioned services and PostgreSQL. The solution must reproduce locally and demonstrate expected and failure paths.</p></div><dl><div><dt>Official review</dt><dd>14 September</dd></div><div><dt>Dependencies</dt><dd>Approved API contract · mock identity adapter</dd></div><div><dt>Outcomes</dt><dd>PO2 · PO3 · PO4 · PO8</dd></div></dl></div>}{assignmentView === "Criteria" && <div className="criterion-list">{[["Needs revision", "Workflow is unreliable, evidence is incomplete or setup cannot be reproduced."], ["Meets industry standard", "Priority and failure paths are verified, traceable and independently reproducible."], ["Exceeds expectations", "Secure boundaries, observability and resilient recovery are justified with evidence."]].map((item) => <span key={item[0]}><b>{item[0]}</b><p>{item[1]}</p></span>)}</div>}{assignmentView === "Artifacts" && <div className="artifact-list">{[["OpenAPI 3.1 contract", "Accepted"], ["PR-42 · integration implementation", "Accepted"], ["PostgreSQL migration set", "Under review"], ["Playwright E2E trace", "Revision required"], ["Local deployment runbook", "Accepted"]].map((item) => <button key={item[0]} onClick={() => notify(`${item[0]} opened`)}><Icon name="file" /><span><b>{item[0]}</b><small>{item[1]}</small></span><Icon name="arrow" /></button>)}</div>}{assignmentView === "History" && <div className="history-list">{[["02 Sep · 16:40", "Revision requested", "Ajitha V S identified two unstable failure scenarios."], ["01 Sep · 11:20", "Evidence reviewed", "OpenAPI contract and integration pull request accepted."], ["30 Aug · 18:05", "Submission created", "Five professional artifacts linked to DS-904."]].map((item) => <span key={item[0]}><time>{item[0]}</time><b>{item[1]}</b><p>{item[2]}</p></span>)}</div>}<div className="assignment-actions"><button onClick={() => notify("Draft progress saved")}>Save progress</button><button onClick={openEvidence}>Attach evidence</button><button className="primary-button" onClick={() => notify("Submission sent for faculty review")}>Submit for review <Icon name="arrow" /></button></div></article>
-    <FilterBar placeholder="Search assignment or engineering evidence" /><article className="panel data-table"><div className="table-head"><span>Assignment</span><span>Role</span><span>Reviewer</span><span>Workflow</span><span>Evidence</span><span>Review</span></div>{rows.map((row) => <button key={row[0]} onClick={() => notify(`${row[0]} assignment opened`)}><span><b>{row[0]} · {row[1]}</b><small>Semester II Full-Stack Engineering</small></span><span>{row[2]}</span><span>{row[3]}</span><span><i className={`status ${row[4].toLowerCase().replaceAll(" ", "-")}`}>{row[4]}</i></span><span>{row[5]}</span><span><b>{row[6]}</b><Icon name="arrow" /></span></button>)}</article></>;
-}
+  const [activeId, setActiveId] = useState(selectedAssignmentId);
 
-function EvidenceLibrary({ openEvidence, notify }: { openEvidence: () => void; notify: (message: string) => void }) {
-  const evidence = [["PR-42 · Frontend–backend integration", "Engineering artifact", "Reviewed code connecting the Next.js client to the versioned REST services", "Accepted", "Create · PO2 · PSO1"], ["OpenAPI 3.1 contract", "API specification", "Endpoints, schemas, authorization rules and error semantics", "Accepted", "Evaluate · PO3 · PSO2"], ["PostgreSQL migration set", "Data engineering", "Versioned schema, constraints, seed data and rollback procedure", "Under review", "Create · PO3"], ["Playwright end-to-end report", "Quality evidence", "Priority journeys, trace files and documented failure reproduction", "Revision required", "Evaluate · PO4 · PSO4"], ["Local deployment runbook", "Operational document", "Environment, secrets, Docker Compose, health checks and recovery steps", "Accepted", "Create · PO4 · PO8"], ["Sprint 04 integration retrospective", "Reflective practice", "Root causes, team decisions, learning and next experiment", "Accepted", "Reflect · PO8"]];
-  return <><PageHeader eyebrow="EVIDENCE & PORTFOLIO" title="A verifiable full-stack engineering portfolio" description="Each artifact connects an implementation decision to its contract, test evidence, mapped outcome, review history and revision status." action="Add learning evidence" onAction={openEvidence} /><div className="evidence-summary"><span><b>22</b>Required evidence items</span><span><b>18</b>Ready</span><span><b>2</b>In review</span><span><b>2</b>Quality gaps</span></div><div className="card-grid">{evidence.map((item, i) => <article className="panel evidence-card" key={item[0]}><div><span className={`file-tile t${i}`}><Icon name="file" /></span><i className={`status ${item[3].toLowerCase().replaceAll(" ", "-")}`}>{item[3]}</i></div><small>{item[1]}</small><h3>{item[0]}</h3><p>{item[2]}</p><div className="mapped-outcomes">{item[4]}</div><button onClick={() => notify(`${item[0]} opened`)}>Inspect evidence trail <Icon name="arrow" /></button></article>)}</div></>;
-}
+  useEffect(() => {
+    if (selectedAssignmentId && selectedAssignmentId !== activeId) {
+      setActiveId(selectedAssignmentId);
+    }
+  }, [selectedAssignmentId]);
 
-function OutcomesPage() {
-  const competencies = [["Cloud-Native Full Stack", "PO2", "Architect a scalable client, service and data-layer solution with explicit boundaries.", "Demonstrated", "PR-42 · architecture decision record"], ["Backend & Data Systems", "PO3", "Design distributed backend services, PostgreSQL persistence and reliable data flows.", "Advancing", "OpenAPI contract · migration set"], ["Delivery Automation", "PO4", "Implement automated test, CI/CD and operational feedback workflows.", "Evidence gap", "Playwright report · revision required"], ["Professional Delivery", "PO8", "Demonstrate an integrated solution with traceable decisions and technical communication.", "Advancing", "Runbook accepted · live demo scheduled"]];
-  return <><PageHeader eyebrow="SKILLS & OUTCOMES" title="Full-stack evidence mapped to programme capabilities" description="Progress is demonstrated through reviewed professional artifacts mapped to the published Programme Outcomes and Programme-Specific Outcomes." /><article className="panel career-path"><div><span className="eyebrow">CURRENT OUTCOME COVERAGE</span><h2>Integrate · Verify · Demonstrate</h2><p>Coverage is an advisory learning view derived from accepted evidence. It does not replace the academic result, certification record or progression decision.</p></div><div className="career-steps"><span className="complete"><i><Icon name="check" /></i><b>PO2</b><small>Cloud-native full stack</small></span><span className="current"><i>03</i><b>PO3</b><small>Backend and data systems</small></span><span><i>04</i><b>PO4</b><small>Quality gates in progress</small></span></div></article><div className="outcome-grid">{competencies.map((item) => <article className="panel outcome-card competency-card" key={String(item[0])}><div><span>{item[1]}</span><i className={`skill-state ${String(item[3]).toLowerCase().replace(" ", "-")}`}>{item[3]}</i></div><h3>{item[0]}</h3><p>{item[2]}</p><div className="skill-evidence"><Icon name="file" /><span><small>VERIFIABLE EVIDENCE</small><b>{item[4]}</b></span></div></article>)}</div></>;
-}
+  const rows = [
+    ["DS-904", "Full-stack integration and test readiness", "Full-Stack Engineer", "Krishnasree K", "Faculty review", "5 / 7", "14 Sep"],
+    ["DS-905", "API contract and PostgreSQL integration", "Backend Engineer", "Soorya S Kumar", "Under review", "6 / 6", "15 Sep"],
+    ["DS-906", "AWS SAA-C03 certification evidence", "Cloud Associate", "Arun Nadh G", "Verification pending", "2 / 3", "18 Sep"],
+    ["DS-907", "End-to-end quality-gate revision", "Quality Engineer", "Ajitha V S", "Revision required", "4 / 6", "20 Sep"]
+  ];
 
-function FeedbackPage({ notify }: { notify: (message: string) => void }) {
-  const revisionSteps = [["Feedback received", "Complete"], ["Revision plan", "Current"], ["Evidence replaced", "Pending"], ["Resubmitted", "Pending"], ["Faculty sign-off", "Pending"]];
-  return <><PageHeader eyebrow="FACULTY FEEDBACK" title="Technical critique and iterative rework" description="Use faculty and mentor feedback to strengthen integration reliability, evidence traceability and professional demonstration readiness." /><article className="panel revision-workflow"><PanelHeading label="DS-907 · REVISION WORKFLOW" title="End-to-end quality gate" meta="Due 05 September" /><div>{revisionSteps.map((item, index) => <span className={index === 0 ? "done" : index === 1 ? "current" : ""} key={item[0]}><i>{index === 0 ? <Icon name="check" /> : index + 1}</i><b>{item[0]}</b><small>{item[1]}</small></span>)}</div></article><article className="panel feedback-feature"><div className="feedback-header"><span className="avatar">AV</span><div><small>AJITHA V S · QA & TEST-AUTOMATION COORDINATOR · 02 SEPTEMBER</small><h2>Revision required · End-to-end quality gate</h2></div><i className="status revision-required">Action required</i></div><blockquote>“The main workflow is integrated. The evidence is not yet demonstration-ready because token refresh and transaction rollback remain unstable and the failure traces are incomplete.”</blockquote><div className="critique-grid"><div><small>WHAT IS WORKING</small><p>Clear API contract, reliable primary CRUD path and reproducible local environment.</p></div><div><small>WHAT MUST CHANGE</small><p>Repair both failure scenarios, add trace artifacts and link the corrected pull request to the test report.</p></div><div><small>ACADEMIC PURPOSE</small><p>Demonstrate cloud-native integration, distributed backend quality and delivery automation against PO2, PO3, PO4 and PSO4.</p></div></div><div className="revision-checklist"><label><input type="checkbox" /> Token refresh scenario passes in Chromium and Firefox</label><label><input type="checkbox" /> Transaction rollback trace attached</label><label><input type="checkbox" /> Corrected pull request linked to report</label><label><input type="checkbox" /> Retrospective updated with root cause</label></div><div className="button-row"><button onClick={() => notify("Response editor opened")}>Respond to coordinator</button><button onClick={() => notify("Revision plan saved")}>Save revision plan</button><button className="primary-button" onClick={() => notify("Resubmission prepared")}>Prepare resubmission <Icon name="arrow" /></button></div></article></>;
-}
-
-function StudentCalendar({ notify }: { notify: (message: string) => void }) {
-  const days = Array.from({ length: 30 }, (_, index) => index + 1);
-  const events: Record<number, { label: string; type: "official" | "personal" | "certification" }[]> = {
-    3: [{ label: "Sprint 04 · Verify", type: "personal" }], 5: [{ label: "DS-907 revision due", type: "official" }], 14: [{ label: "DS-904 faculty review", type: "official" }], 15: [{ label: "DS-905 API review", type: "official" }], 16: [{ label: "Full-stack live demo · 10:30", type: "official" }], 18: [{ label: "AWS evidence verification", type: "certification" }], 20: [{ label: "DS-907 final resubmission", type: "official" }],
+  const handleSelect = (id: string) => {
+    setActiveId(id);
+    onSelectAssignment?.(id);
+    notify(`${id} assignment loaded on workbench`);
   };
-  return <><PageHeader eyebrow="STUDENT CALENDAR · SEPTEMBER" title="Plan around official academic commitments" description="Faculty deadlines, reviews and certification checks are locked. Personal work-plan events remain editable and never represent attendance." action="Add personal work block" onAction={() => notify("Personal event editor opened")} /><div className="calendar-layout"><article className="panel calendar-panel"><div className="calendar-toolbar"><div><button aria-label="Previous month"><Icon name="chevron" /></button><h2>September 2026</h2><button aria-label="Next month"><Icon name="arrow" /></button></div><button onClick={() => notify("Today selected")}>Today</button></div><div className="calendar-legend"><span><i className="official" />Official · faculty controlled</span><span><i className="personal" />Personal work plan</span><span><i className="certification" />Certification</span></div><div className="calendar-grid"><div className="weekdays">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <b key={day}>{day}</b>)}</div><div className="calendar-days"><span className="empty" /><span className="empty" />{days.map((day) => <button className={day === 3 ? "today" : ""} key={day} onClick={() => notify(events[day]?.[0]?.label ?? `${day} September selected`)}><time>{day}</time>{events[day]?.map((event) => <small className={event.type} key={event.label}>{event.type === "official" && <Icon name="shield" />}{event.label}</small>)}</button>)}</div></div></article><aside className="calendar-side"><article className="panel"><PanelHeading label="UPCOMING" title="Academic commitments" meta="Next 17 days" /><div className="agenda-list">{[["05 SEP", "DS-907 revision due", "Official deadline"], ["14 SEP", "DS-904 faculty review", "Krishnasree K"], ["16 SEP", "Full-stack live demonstration", "10:30 · Engineering Studio 2"], ["18 SEP", "AWS SAA-C03 verification", "Certification record"]].map((item) => <button key={item[0]} onClick={() => notify(`${item[1]} opened`)}><i>{item[0]}</i><span><b>{item[1]}</b><small>{item[2]}</small></span><Icon name="arrow" /></button>)}</div></article><article className="panel calendar-boundary"><Icon name="shield" /><div><b>Calendar is not attendance</b><p>Events organise academic work. DUK@360 remains the only attendance system.</p></div></article></aside></div></>;
+
+  const current = WORKBOARD_ASSIGNMENTS[activeId] ?? WORKBOARD_ASSIGNMENTS["DS-907"];
+
+  return <>
+    <PageHeader
+      eyebrow="WORK BOARD · PROJECT-IMMERSIVE LEARNING"
+      title="Full-stack assignments, Sprint work and evidence"
+      description="Complete outcome-mapped engineering work with explicit contracts, dependencies, professional artifacts and faculty review."
+      action="Record learning evidence"
+      onAction={() => openEvidence(current.id)}
+    />
+    {/* New Student Onboarding Banner: How Work Board connects to Dashboard & Portfolio */}
+    <article className="panel workboard-onboarding-card">
+      <div className="wb-onboard-content">
+        <span className="eyebrow">NEW STUDENT REFERENCE · WORK BOARD VS PORTFOLIO</span>
+        <h2>Your Active Engineering Execution Workbench</h2>
+        <p>
+          While your <strong>Overview Dashboard</strong> is your strategic cockpit (priorities & points), and your <strong>Evidence & Portfolio</strong> is your cumulative degree showcase, this <strong>Work Board</strong> is your in-flight workshop: inspect the technical brief, check grading rubrics, attach code deliverables (PRs, migrations, test traces), and submit for faculty review.
+        </p>
+        <div className="wb-step-flow">
+          <span className="wb-flow-pill"><Icon name="book" /> 1. Read Brief</span>
+          <span className="wb-arrow" aria-hidden="true">→</span>
+          <span className="wb-flow-pill"><Icon name="target" /> 2. Check Rubric Criteria</span>
+          <span className="wb-arrow" aria-hidden="true">→</span>
+          <span className="wb-flow-pill"><Icon name="file" /> 3. Attach Artifacts</span>
+          <span className="wb-arrow" aria-hidden="true">→</span>
+          <span className="wb-flow-pill accent"><Icon name="check" /> 4. Submit for Review</span>
+        </div>
+      </div>
+      {onNavigate && (
+        <div className="wb-header-nav-actions">
+          <button type="button" className="wb-overview-jump" onClick={() => onNavigate("Overview")} title="Return to Dashboard Overview">
+            ← Return to Dashboard Overview
+          </button>
+          <button type="button" className="wb-overview-jump secondary" onClick={() => onNavigate("Evidence & Portfolio")} title="View your cumulative Evidence Portfolio">
+            View Evidence Portfolio →
+          </button>
+        </div>
+      )}
+    </article>
+
+    <article className="panel mission-command">
+      <div>
+        <span className="eyebrow">SELECTED ASSIGNMENT · {current.id}</span>
+        <h2>{current.question}</h2>
+        <p>{current.summary}</p>
+      </div>
+      <dl>
+        <div><dt>Project role</dt><dd>{current.role}</dd></div>
+        <div><dt>Cognitive focus</dt><dd>{current.cognitive}</dd></div>
+        <div><dt>Learning stage</dt><dd>{current.stage}</dd></div>
+        <div><dt>Required evidence</dt><dd>{current.requiredEvidence}</dd></div>
+      </dl>
+    </article>
+
+    <article className="panel assignment-workspace">
+      <div className="assignment-tabs" role="tablist" aria-label="Assignment workspace">
+        {["Brief", "Criteria", "Artifacts", "History"].map((item) => (
+          <button
+            role="tab"
+            aria-selected={assignmentView === item}
+            className={assignmentView === item ? "active" : ""}
+            key={item}
+            onClick={() => setAssignmentView(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      {assignmentView === "Brief" && (
+        <div className="assignment-view">
+          <div>
+            <span className="eyebrow">CLIENT BRIEF</span>
+            <h3>{current.briefTitle}</h3>
+            <p>{current.briefDesc}</p>
+          </div>
+          <dl>
+            <div><dt>Official review</dt><dd>{current.reviewDate}</dd></div>
+            <div><dt>Dependencies</dt><dd>{current.dependencies}</dd></div>
+            <div><dt>Outcomes</dt><dd>{current.outcomes}</dd></div>
+          </dl>
+        </div>
+      )}
+      {assignmentView === "Criteria" && (
+        <div className="criterion-list">
+          {current.criteria.map((item) => (
+            <span key={item[0]}>
+              <b>{item[0]}</b>
+              <p>{item[1]}</p>
+            </span>
+          ))}
+        </div>
+      )}
+      {assignmentView === "Artifacts" && (
+        <div className="artifact-list">
+          {current.artifacts.map((item) => (
+            <button key={item[0]} onClick={() => notify(`${item[0]} opened`)}>
+              <Icon name="file" />
+              <span>
+                <b>{item[0]}</b>
+                <small>{item[1]}</small>
+              </span>
+              <Icon name="arrow" />
+            </button>
+          ))}
+          <div className="wb-portfolio-bridge">
+            <div className="wb-pb-text">
+              <Icon name="shield" />
+              <div>
+                <b>Connected to Evidence & Portfolio</b>
+                <p>Deliverables accepted during faculty review are automatically archived in your permanent Evidence & Portfolio, mapped to PO1–PO8 competencies.</p>
+              </div>
+            </div>
+            {onNavigate && (
+              <button
+                type="button"
+                className="wb-pb-btn"
+                onClick={() => onNavigate("Evidence & Portfolio")}
+                title="View your verified degree portfolio"
+              >
+                Inspect Evidence Portfolio (18 Ready) →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {assignmentView === "History" && (
+        <div className="history-list">
+          {current.history.map((item) => (
+            <span key={item[0]}>
+              <time>{item[0]}</time>
+              <b>{item[1]}</b>
+              <p>{item[2]}</p>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="assignment-actions">
+        <button onClick={() => notify(`Draft progress saved for ${current.id}`)}>Save progress</button>
+        <button onClick={() => openEvidence(current.id)}>Attach evidence</button>
+        <button className="primary-button" onClick={() => notify(`${current.id} submission sent for faculty review`)}>
+          Submit for review <Icon name="arrow" />
+        </button>
+      </div>
+    </article>
+
+    <FilterBar placeholder="Search assignment or engineering evidence" />
+    <article className="panel data-table">
+      <div className="table-head">
+        <span>Assignment</span>
+        <span>Role</span>
+        <span>Reviewer</span>
+        <span>Workflow</span>
+        <span>Evidence</span>
+        <span>Review</span>
+      </div>
+      {rows.map((row) => {
+        const isSelected = row[0] === current.id;
+        return (
+          <button
+            key={row[0]}
+            className={isSelected ? "active-assignment-row" : ""}
+            aria-selected={isSelected}
+            onClick={() => handleSelect(row[0])}
+            title={`Select ${row[0]} to load its brief and artifacts into workbench`}
+          >
+            <span>
+              <b>{row[0]} · {row[1]}</b>
+              <small>Semester II Full-Stack Engineering {isSelected ? "· Active on workbench" : ""}</small>
+            </span>
+            <span>{row[2]}</span>
+            <span>{row[3]}</span>
+            <span><i className={`status ${row[4].toLowerCase().replaceAll(" ", "-")}`}>{row[4]}</i></span>
+            <span>{row[5]}</span>
+            <span><b>{row[6]}</b><Icon name="arrow" /></span>
+          </button>
+        );
+      })}
+    </article>
+  </>;
+}
+
+function EvidenceLibrary({
+  openEvidence,
+  notify,
+  onNavigate,
+}: {
+  openEvidence: () => void;
+  notify: (message: string) => void;
+  onNavigate?: (page: string, assignmentId?: string) => void;
+}) {
+  const [filter, setFilter] = useState<"all" | "Accepted" | "Under review" | "Revision required">("all");
+
+  const evidence = [
+    {
+      title: "PR-42 · Frontend–backend integration",
+      type: "Engineering artifact",
+      description: "Reviewed code connecting the Next.js client to the versioned REST services",
+      status: "Accepted",
+      outcomes: "Create · PO2 · PSO1",
+      assignmentId: "DS-904",
+      assignmentTitle: "DS-904 Full-Stack Integration",
+      reviewer: "Krishnasree K",
+      tileClass: "t0",
+    },
+    {
+      title: "OpenAPI 3.1 contract",
+      type: "API specification",
+      description: "Endpoints, schemas, authorization rules and error semantics",
+      status: "Accepted",
+      outcomes: "Evaluate · PO3 · PSO2",
+      assignmentId: "DS-904",
+      assignmentTitle: "DS-904 / DS-905 API Contract",
+      reviewer: "Soorya S Kumar",
+      tileClass: "t1",
+    },
+    {
+      title: "PostgreSQL migration set",
+      type: "Data engineering",
+      description: "Versioned schema, constraints, seed data and rollback procedure",
+      status: "Under review",
+      outcomes: "Create · PO3",
+      assignmentId: "DS-905",
+      assignmentTitle: "DS-905 PostgreSQL Integration",
+      reviewer: "Soorya S Kumar",
+      tileClass: "t2",
+    },
+    {
+      title: "Playwright end-to-end report",
+      type: "Quality evidence",
+      description: "Priority journeys, trace files and documented failure reproduction",
+      status: "Revision required",
+      outcomes: "Evaluate · PO4 · PSO4",
+      assignmentId: "DS-907",
+      assignmentTitle: "DS-907 Quality Gate Revision",
+      reviewer: "Ajitha V S",
+      tileClass: "t3",
+      needsRevision: true,
+    },
+    {
+      title: "Local deployment runbook",
+      type: "Operational document",
+      description: "Environment, secrets, Docker Compose, health checks and recovery steps",
+      status: "Accepted",
+      outcomes: "Create · PO4 · PO8",
+      assignmentId: "DS-904",
+      assignmentTitle: "DS-904 Deployment Readiness",
+      reviewer: "Krishnasree K",
+      tileClass: "t4",
+    },
+    {
+      title: "Sprint 04 integration retrospective",
+      type: "Reflective practice",
+      description: "Root causes, team decisions, learning and next experiment",
+      status: "Accepted",
+      outcomes: "Reflect · PO8",
+      assignmentId: "DS-907",
+      assignmentTitle: "Sprint 04 Retrospective",
+      reviewer: "Ajitha V S",
+      tileClass: "t5",
+    },
+  ];
+
+  const filtered = filter === "all" ? evidence : evidence.filter((item) => item.status === filter);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="EVIDENCE & PORTFOLIO · DEGREE SHOWCASE"
+        title="A verifiable full-stack engineering portfolio"
+        description="Each artifact connects an implementation decision to its contract, test evidence, mapped outcome, review history and revision status."
+        action="Add learning evidence"
+        onAction={openEvidence}
+      />
+
+      {/* New Student Onboarding Banner: Portfolio vs Work Board */}
+      <article className="panel evidence-onboarding-card">
+        <div className="ev-onboard-content">
+          <span className="eyebrow">NEW STUDENT REFERENCE · PORTFOLIO VS WORK BOARD</span>
+          <h2>Your Cumulative Verified Engineering Showcase</h2>
+          <p>
+            While your <strong>Work Board</strong> is where you actively execute and submit sprint assignments (DS-904, DS-907), this <strong>Evidence & Portfolio</strong> is your permanent repository of verified deliverables. Each accepted artifact here is permanently mapped to university Programme Outcomes (PO1–PO8) and serves as audited proof of your competence for viva defence, academic marks, and employer portfolios.
+          </p>
+          <div className="ev-triad-flow">
+            <span className="ev-flow-pill"><Icon name="grid" /> 1. Dashboard: Cockpit & Alerts</span>
+            <span className="ev-arrow" aria-hidden="true">→</span>
+            <span className="ev-flow-pill"><Icon name="brief" /> 2. Work Board: Active Execution</span>
+            <span className="ev-arrow" aria-hidden="true">→</span>
+            <span className="ev-flow-pill accent"><Icon name="file" /> 3. Portfolio: Permanent Showcase</span>
+          </div>
+        </div>
+        {onNavigate && (
+          <div className="ev-onboard-actions">
+            <button
+              type="button"
+              className="wb-overview-jump"
+              onClick={() => onNavigate("Work Board")}
+              title="Jump to active execution workbench"
+            >
+              <Icon name="brief" /> Open Work Board Workbench →
+            </button>
+            <button
+              type="button"
+              className="wb-overview-jump secondary"
+              onClick={() => onNavigate("Overview")}
+              title="Return to Dashboard Overview"
+            >
+              ← Return to Dashboard
+            </button>
+          </div>
+        )}
+      </article>
+
+      <div className="evidence-summary">
+        <span><b>22</b>Required evidence items</span>
+        <span><b>18</b>Ready</span>
+        <span><b>2</b>In review</span>
+        <span><b>2</b>Quality gaps</span>
+      </div>
+
+      {/* Interactive Filter Pills */}
+      <div className="evidence-filter-bar" role="group" aria-label="Filter evidence by status">
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "all" ? "active" : ""}`}
+          onClick={() => setFilter("all")}
+        >
+          All Artifacts ({evidence.length})
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "Accepted" ? "active" : ""}`}
+          onClick={() => setFilter("Accepted")}
+        >
+          Accepted ({evidence.filter((e) => e.status === "Accepted").length})
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "Under review" ? "active" : ""}`}
+          onClick={() => setFilter("Under review")}
+        >
+          In Review ({evidence.filter((e) => e.status === "Under review").length})
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${filter === "Revision required" ? "active" : ""}`}
+          onClick={() => setFilter("Revision required")}
+        >
+          Quality Gaps ({evidence.filter((e) => e.status === "Revision required").length})
+        </button>
+      </div>
+
+      <div className="card-grid">
+        {filtered.map((item) => (
+          <article className="panel evidence-card" key={item.title}>
+            <div>
+              <span className={`file-tile ${item.tileClass}`}><Icon name="file" /></span>
+              <i className={`status ${item.status.toLowerCase().replaceAll(" ", "-")}`}>{item.status}</i>
+            </div>
+            <div className="evidence-origin-row">
+              <small>{item.type}</small>
+              <span className="evidence-source-pill" title={`Originated in assignment ${item.assignmentId}`}>
+                <Icon name="brief" /> {item.assignmentId}
+              </span>
+            </div>
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            <div className="mapped-outcomes">{item.outcomes}</div>
+
+            {/* If Revision Required, provide direct jump to fix on Work Board */}
+            {item.needsRevision && onNavigate ? (
+              <button
+                type="button"
+                className="evidence-fix-btn"
+                onClick={() => onNavigate("Work Board", item.assignmentId)}
+                title={`Open ${item.assignmentId} on Work Board to resolve quality gap`}
+              >
+                <Icon name="alert" /> Fix on Work Board ({item.assignmentId}) →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => notify(`${item.title} opened`)}
+              >
+                Inspect evidence trail <Icon name="arrow" />
+              </button>
+            )}
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function OutcomesPage({ notify, onNavigate, openEvidence }: { notify?: (msg: string) => void; onNavigate?: (page: string, assignmentId?: string) => void; openEvidence?: (assignment?: string) => void }) {
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "core" | "specialized">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "demonstrated" | "advancing" | "gap">("all");
+
+  const competencies = [
+    {
+      title: "Cloud-Native Full Stack",
+      code: "PO2",
+      type: "core",
+      typeLabel: "Core PO",
+      desc: "Architect a scalable client, service and data-layer solution with explicit boundaries.",
+      state: "Demonstrated",
+      evidence: "PR-42 · architecture decision record",
+      source: "DS-904",
+      statusKey: "demonstrated",
+    },
+    {
+      title: "Backend & Data Systems",
+      code: "PO3",
+      type: "core",
+      typeLabel: "Core PO",
+      desc: "Design distributed backend services, PostgreSQL persistence and reliable data flows.",
+      state: "Advancing",
+      evidence: "OpenAPI contract · migration set",
+      source: "DS-904",
+      statusKey: "advancing",
+    },
+    {
+      title: "Delivery Automation & QA",
+      code: "PO4",
+      type: "core",
+      typeLabel: "Core PO",
+      desc: "Implement automated test, CI/CD and operational feedback workflows.",
+      state: "Evidence gap",
+      evidence: "Playwright report · revision required",
+      source: "DS-907",
+      statusKey: "gap",
+    },
+    {
+      title: "Professional Delivery & Defence",
+      code: "PO8",
+      type: "core",
+      typeLabel: "Core PO",
+      desc: "Demonstrate an integrated solution with traceable decisions and technical communication.",
+      state: "Advancing",
+      evidence: "Runbook accepted · live demo scheduled",
+      source: "DS-904",
+      statusKey: "advancing",
+    },
+    {
+      title: "Distributed Transaction Resilience",
+      code: "PSO1",
+      type: "specialized",
+      typeLabel: "Specialized PSO",
+      desc: "Ensure distributed transaction isolation, token refresh durability and failure recovery.",
+      state: "Evidence gap",
+      evidence: "Failure trace · token recovery open",
+      source: "DS-907",
+      statusKey: "gap",
+    },
+    {
+      title: "Quality-Gate Automation",
+      code: "PSO4",
+      type: "specialized",
+      typeLabel: "Specialized PSO",
+      desc: "Enforce end-to-end regression testing and containerized test automation pipelines.",
+      state: "Advancing",
+      evidence: "Chromium & Firefox CI runs",
+      source: "DS-907",
+      statusKey: "advancing",
+    },
+  ];
+
+  const filtered = competencies.filter((item) => {
+    if (categoryFilter === "core" && item.type !== "core") return false;
+    if (categoryFilter === "specialized" && item.type !== "specialized") return false;
+    if (statusFilter !== "all" && item.statusKey !== statusFilter) return false;
+    return true;
+  });
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="SKILLS & OUTCOMES"
+        title="Full-stack evidence mapped to programme capabilities"
+        description="Progress is demonstrated through reviewed professional artifacts mapped to the published Programme Outcomes and Programme-Specific Outcomes."
+      />
+
+      <article className="panel outcomes-demystifier-card">
+        <div className="outcomes-demystifier-header">
+          <div className="outcomes-demystifier-icon">
+            <Icon name="target" />
+          </div>
+          <div>
+            <span className="eyebrow">UNDERSTANDING OUTCOMES · LEVEL 9</span>
+            <h2>How Your Code Maps to Degree Competencies</h2>
+            <p>
+              In MSDSP, you don&apos;t just pass tests; you build verifiable engineering evidence audited against ABET / NBA graduate standards.
+            </p>
+          </div>
+        </div>
+        <div className="outcomes-triad-grid">
+          <div className="outcome-triad-item">
+            <div className="triad-item-badge core">PO1–PO8</div>
+            <b>Programme Outcomes</b>
+            <p>Universal engineering abilities: problem analysis, system architecture, modern tooling, professional ethics, and communication.</p>
+          </div>
+          <div className="outcome-triad-item">
+            <div className="triad-item-badge spec">PSO1–PSO4</div>
+            <b>Specialized Outcomes</b>
+            <p>MSDSP cloud-native capabilities: distributed services, data pipelines, resilient transactions, and delivery automation.</p>
+          </div>
+          <div className="outcome-triad-item">
+            <div className="triad-item-badge audit">Audited Proof</div>
+            <b>Verifiable Artifacts</b>
+            <p>Accepted pull requests and test traces graduate directly to your Evidence &amp; Portfolio to prove competency for viva and placements.</p>
+          </div>
+        </div>
+      </article>
+
+      <article className="panel career-path">
+        <div>
+          <span className="eyebrow">CURRENT OUTCOME COVERAGE</span>
+          <h2>Integrate · Verify · Demonstrate</h2>
+          <p>Coverage is an advisory learning view derived from accepted evidence. It does not replace the academic result, certification record or progression decision.</p>
+        </div>
+        <div className="career-steps">
+          <span className="complete"><i><Icon name="check" /></i><b>PO2</b><small>Cloud-native full stack</small></span>
+          <span className="current"><i>03</i><b>PO3</b><small>Backend and data systems</small></span>
+          <span><i>04</i><b>PO4</b><small>Quality gates in progress</small></span>
+        </div>
+      </article>
+
+      <div className="outcomes-controls-card">
+        <div className="outcomes-progress-strip">
+          <div className="outcomes-progress-info">
+            <b>Level 9 Active Coverage: 4 / 6 Competencies Addressed (67%)</b>
+            <span>2 gaps pending resolution in DS-907</span>
+          </div>
+          <div className="outcomes-progress-track">
+            <div className="outcomes-progress-fill" style={{ width: "67%" }} />
+          </div>
+        </div>
+
+        <div className="outcomes-filter-bar">
+          <div className="outcomes-filter-group" role="group" aria-label="Outcome category">
+            <button
+              type="button"
+              className={`ev-filter-pill ${categoryFilter === "all" ? "active" : ""}`}
+              onClick={() => { setCategoryFilter("all"); notify?.("Showing all outcomes"); }}
+            >
+              All Outcomes (6)
+            </button>
+            <button
+              type="button"
+              className={`ev-filter-pill ${categoryFilter === "core" ? "active" : ""}`}
+              onClick={() => { setCategoryFilter("core"); notify?.("Showing Core POs"); }}
+            >
+              Core POs (4)
+            </button>
+            <button
+              type="button"
+              className={`ev-filter-pill ${categoryFilter === "specialized" ? "active" : ""}`}
+              onClick={() => { setCategoryFilter("specialized"); notify?.("Showing Specialized PSOs"); }}
+            >
+              Specialized PSOs (2)
+            </button>
+          </div>
+
+          <div className="outcomes-filter-group" role="group" aria-label="Outcome verification status">
+            <button
+              type="button"
+              className={`ev-filter-pill ${statusFilter === "all" ? "active" : ""}`}
+              onClick={() => setStatusFilter("all")}
+            >
+              All Statuses
+            </button>
+            <button
+              type="button"
+              className={`ev-filter-pill ${statusFilter === "demonstrated" ? "active" : ""}`}
+              onClick={() => setStatusFilter("demonstrated")}
+            >
+              Demonstrated (1)
+            </button>
+            <button
+              type="button"
+              className={`ev-filter-pill ${statusFilter === "advancing" ? "active" : ""}`}
+              onClick={() => setStatusFilter("advancing")}
+            >
+              Advancing (3)
+            </button>
+            <button
+              type="button"
+              className={`ev-filter-pill ${statusFilter === "gap" ? "active" : ""}`}
+              onClick={() => setStatusFilter("gap")}
+            >
+              Evidence Gaps (2)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="outcome-grid">
+        {filtered.map((item) => (
+          <article className="panel outcome-card competency-card" key={item.code}>
+            <div className="outcome-card-top">
+              <div className="outcome-badge-wrap">
+                <span className="outcome-code-tag">{item.code}</span>
+                <small className="outcome-category-tag">{item.typeLabel}</small>
+              </div>
+              <i className={`skill-state ${item.state.toLowerCase().replace(" ", "-")}`}>
+                {item.state}
+              </i>
+            </div>
+            <h3>{item.title}</h3>
+            <p>{item.desc}</p>
+            <div className="skill-evidence">
+              <Icon name="file" />
+              <span>
+                <small>VERIFIABLE EVIDENCE</small>
+                <b>{item.evidence}</b>
+              </span>
+            </div>
+            <div className="outcome-card-footer">
+              <span className="outcome-source-tag">Source: {item.source}</span>
+              {item.state === "Evidence gap" ? (
+                <button
+                  type="button"
+                  className="outcome-action-btn fix-gap"
+                  onClick={() => onNavigate?.("Work Board", item.source)}
+                >
+                  Fix on Work Board ({item.source}) →
+                </button>
+              ) : item.state === "Demonstrated" ? (
+                <button
+                  type="button"
+                  className="outcome-action-btn view-portfolio"
+                  onClick={() => onNavigate?.("Evidence & Portfolio")}
+                >
+                  Inspect in Portfolio →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="outcome-action-btn view-board"
+                  onClick={() => onNavigate?.("Work Board", item.source)}
+                >
+                  View on Work Board →
+                </button>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function FeedbackPage({
+  notify,
+  onNavigate,
+  openEvidence,
+  selectedAssignmentId,
+  onSelectAssignment,
+}: {
+  notify?: (message: string) => void;
+  onNavigate?: (page: string, assignmentId?: string) => void;
+  openEvidence?: (assignment?: string) => void;
+  selectedAssignmentId?: string;
+  onSelectAssignment?: (id: string) => void;
+}) {
+  const [activeTab, setActiveTab] = useState<string>(selectedAssignmentId && ["DS-907", "DS-904", "DS-905"].includes(selectedAssignmentId) ? selectedAssignmentId : "DS-907");
+  const [checklistState, setChecklistState] = useState<Record<string, boolean>>({
+    "c-1": false,
+    "c-2": false,
+    "c-3": false,
+    "c-4": false,
+  });
+
+  const feedbackData: Record<string, {
+    id: string;
+    title: string;
+    reviewer: string;
+    reviewerRole: string;
+    date: string;
+    status: string;
+    statusCode: "revision-required" | "under-review" | "verified";
+    urgency: string;
+    urgent: boolean;
+    quote: string;
+    working: string;
+    mustChange: string;
+    purpose: string;
+    checklist: { id: string; text: string }[];
+    steps: [string, string][];
+  }> = {
+    "DS-907": {
+      id: "DS-907",
+      title: "End-to-end quality gate",
+      reviewer: "AJITHA V S",
+      reviewerRole: "QA & TEST-AUTOMATION COORDINATOR",
+      date: "02 SEPTEMBER 2026",
+      status: "Revision required · Action required",
+      statusCode: "revision-required",
+      urgency: "Due in 34 hours · 05 September",
+      urgent: true,
+      quote: "The main workflow is integrated. The evidence is not yet demonstration-ready because token refresh and transaction rollback remain unstable and the failure traces are incomplete.",
+      working: "Clear API contract, reliable primary CRUD path and reproducible local environment.",
+      mustChange: "Repair both failure scenarios, add trace artifacts and link the corrected pull request to the test report.",
+      purpose: "Demonstrate cloud-native integration, distributed backend quality and delivery automation against PO2, PO3, PO4 and PSO4.",
+      checklist: [
+        { id: "c-1", text: "Token refresh scenario passes in Chromium and Firefox" },
+        { id: "c-2", text: "Transaction rollback trace attached" },
+        { id: "c-3", text: "Corrected pull request linked to report" },
+        { id: "c-4", text: "Retrospective updated with root cause" },
+      ],
+      steps: [
+        ["Feedback received", "Complete"],
+        ["Revision plan", "Current"],
+        ["Evidence replaced", "Pending"],
+        ["Resubmitted", "Pending"],
+        ["Faculty sign-off", "Pending"],
+      ],
+    },
+    "DS-904": {
+      id: "DS-904",
+      title: "Full-stack integration and test readiness",
+      reviewer: "KRISHNASREE K",
+      reviewerRole: "LEARNING CYCLE COORDINATOR · LEVEL 9",
+      date: "01 SEPTEMBER 2026",
+      status: "Under Review · Live Demo Scheduled",
+      statusCode: "under-review",
+      urgency: "Live Demonstration · 16 September",
+      urgent: false,
+      quote: "Architecture decision record (ADR) and service decomposition are cleanly executed. Focus next on live fault-injection resilience and runbook clarity for the viva panel.",
+      working: "Clean modular service boundaries, well-documented OpenAPI schema, and PostgreSQL migration integrity.",
+      mustChange: "Finalize live failover demonstration script and complete local developer onboarding runbook.",
+      purpose: "Validates PO2 (Full-stack architecture) and PO8 (Professional technical communication).",
+      checklist: [
+        { id: "c-1", text: "ADR-04 signed off and committed" },
+        { id: "c-2", text: "Local Docker Compose environment verified" },
+        { id: "c-3", text: "10-minute live demonstration slide outline drafted" },
+        { id: "c-4", text: "Peer code-review comments resolved on PR-42" },
+      ],
+      steps: [
+        ["Brief assigned", "Complete"],
+        ["Draft submitted", "Complete"],
+        ["Under review", "Current"],
+        ["Live demo gate", "Pending"],
+        ["Final grading", "Pending"],
+      ],
+    },
+    "DS-905": {
+      id: "DS-905",
+      title: "API contract & distributed data persistence",
+      reviewer: "DIJU M",
+      reviewerRole: "STUDENT-TEAM MENTOR · CODE REVIEW",
+      date: "28 AUGUST 2026",
+      status: "Approved & Verified",
+      statusCode: "verified",
+      urgency: "Sprint 03 Milestone verified",
+      urgent: false,
+      quote: "Excellent work on database migration versioning and schema rollback scripts. Team Northstar demonstrated great discipline with pull-request conventions.",
+      working: "Zero schema lint errors, automated Prisma migrations, and comprehensive negative-path HTTP status codes.",
+      mustChange: "None for this sprint. Maintain this standard into Sprint 04 verification gates.",
+      purpose: "Satisfies PO3 (Data systems) and PSO1 (Resilient transaction isolation).",
+      checklist: [
+        { id: "c-1", text: "PostgreSQL 16 migration scripts committed" },
+        { id: "c-2", text: "Negative test cases for duplicate constraints added" },
+        { id: "c-3", text: "OpenAPI 3.1 documentation published" },
+        { id: "c-4", text: "Peer review approvals logged" },
+      ],
+      steps: [
+        ["Brief assigned", "Complete"],
+        ["Draft submitted", "Complete"],
+        ["Code review", "Complete"],
+        ["Revisions cleared", "Complete"],
+        ["Verified & Approved", "Complete"],
+      ],
+    },
+  };
+
+  const current = feedbackData[activeTab] ?? feedbackData["DS-907"];
+  const checkedCount = Object.values(checklistState).filter(Boolean).length;
+  const progressPercent = Math.round((checkedCount / current.checklist.length) * 100);
+
+  const toggleCheck = (id: string) => {
+    setChecklistState((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="FACULTY FEEDBACK"
+        title="Technical critique and iterative rework"
+        description="Use faculty and mentor feedback to strengthen integration reliability, evidence traceability and professional demonstration readiness."
+      />
+
+      <div className="feedback-assignment-tabs" role="tablist" aria-label="Assignments with feedback">
+        {Object.values(feedbackData).map((item) => (
+          <button
+            key={item.id}
+            role="tab"
+            type="button"
+            aria-selected={activeTab === item.id}
+            className={`feedback-tab-card ${activeTab === item.id ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab(item.id);
+              onSelectAssignment?.(item.id);
+              notify?.(`Critique for ${item.id} opened`);
+            }}
+          >
+            <div className="fb-tab-header">
+              <b>{item.id}</b>
+              <i className={`status ${item.statusCode === "revision-required" ? "revision-required" : item.statusCode === "under-review" ? "upcoming" : "accepted"}`}>
+                {item.statusCode === "revision-required" ? "Action Required" : item.statusCode === "under-review" ? "Under Review" : "Verified"}
+              </i>
+            </div>
+            <p className="fb-tab-title">{item.title}</p>
+            <small className="fb-tab-reviewer">{item.reviewer}</small>
+          </button>
+        ))}
+      </div>
+
+      <article className="panel revision-workflow">
+        <PanelHeading
+          label={`${current.id} · REVISION WORKFLOW`}
+          title={current.title}
+          meta={current.urgency}
+        />
+        <div>
+          {current.steps.map((item, index) => (
+            <span
+              className={item[1] === "Complete" ? "done" : item[1] === "Current" ? "current" : ""}
+              key={item[0]}
+            >
+              <i>{item[1] === "Complete" ? <Icon name="check" /> : index + 1}</i>
+              <b>{item[0]}</b>
+              <small>{item[1]}</small>
+            </span>
+          ))}
+        </div>
+      </article>
+
+      <article className="panel feedback-feature">
+        <div className="feedback-header">
+          <span className="avatar">
+            {current.reviewer.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+          </span>
+          <div>
+            <small>{current.reviewer} · {current.reviewerRole} · {current.date}</small>
+            <h2>{current.status}</h2>
+          </div>
+          <i className={`status ${current.statusCode === "revision-required" ? "revision-required" : current.statusCode === "under-review" ? "upcoming" : "accepted"}`}>
+            {current.statusCode === "revision-required" ? "Action required" : current.statusCode === "under-review" ? "Pending Demo" : "Verified"}
+          </i>
+        </div>
+
+        <blockquote>“{current.quote}”</blockquote>
+
+        <div className="critique-grid">
+          <div>
+            <small>WHAT IS WORKING</small>
+            <p>{current.working}</p>
+          </div>
+          <div>
+            <small>WHAT MUST CHANGE</small>
+            <p>{current.mustChange}</p>
+          </div>
+          <div>
+            <small>ACADEMIC PURPOSE</small>
+            <p>{current.purpose}</p>
+          </div>
+        </div>
+
+        <div className="revision-checklist-wrap">
+          <div className="revision-checklist-header">
+            <b>REVISION CHECKLIST &amp; FIX ITEMS</b>
+            <span>{checkedCount} of {current.checklist.length} completed ({progressPercent}%)</span>
+          </div>
+          <div className="revision-checklist-bar">
+            <div className="revision-checklist-fill" style={{ width: `${progressPercent}%` }} />
+          </div>
+          <div className="revision-checklist">
+            {current.checklist.map((item) => (
+              <label key={item.id} className={checklistState[item.id] ? "checked" : ""}>
+                <input
+                  type="checkbox"
+                  checked={checklistState[item.id] || false}
+                  onChange={() => toggleCheck(item.id)}
+                />
+                <span>{item.text}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="button-row">
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => notify?.(`Clarification request sent to ${current.reviewer}`)}
+          >
+            <Icon name="message" /> Respond to reviewer
+          </button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => {
+              openEvidence?.(current.id);
+              notify?.(`Evidence modal opened for ${current.id}`);
+            }}
+          >
+            <Icon name="file" /> Upload Evidence / Traces
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => {
+              onSelectAssignment?.(current.id);
+              onNavigate?.("Work Board", current.id);
+            }}
+          >
+            Execute Revision on Work Board ({current.id}) <Icon name="arrow" />
+          </button>
+        </div>
+      </article>
+    </>
+  );
+}
+
+function StudentCalendar({ notify, onNavigate }: { notify?: (message: string) => void; onNavigate?: (page: string, assignmentId?: string) => void }) {
+  const [selectedDay, setSelectedDay] = useState<number>(5);
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "official" | "review" | "sprint" | "certification">("all");
+
+  const days = Array.from({ length: 30 }, (_, index) => index + 1);
+
+  type CalendarEvent = {
+    id: string;
+    label: string;
+    category: "official" | "review" | "sprint" | "certification";
+    categoryLabel: string;
+    time?: string;
+    reviewer?: string;
+    venue?: string;
+    detail: string;
+    assignmentId?: string;
+    actionLabel?: string;
+    actionType?: "workboard" | "feedback";
+  };
+
+  const calendarEvents: Record<number, CalendarEvent[]> = {
+    3: [
+      {
+        id: "ev-03",
+        label: "Sprint 04 · Verify checkpoint",
+        category: "sprint",
+        categoryLabel: "Personal Sprint Plan",
+        time: "14:00 – 16:00",
+        venue: "Engineering Pod Alpha",
+        detail: "Execute local Chromium & Firefox test runs and capture failed trace recordings for PR-42.",
+        assignmentId: "DS-907",
+        actionLabel: "View on Work Board →",
+        actionType: "workboard",
+      },
+    ],
+    5: [
+      {
+        id: "ev-05",
+        label: "DS-907 End-to-end quality gate revision due",
+        category: "official",
+        categoryLabel: "Official Deadline · Faculty Controlled",
+        time: "Due 23:59 IST",
+        reviewer: "Ajitha V S (QA Coordinator)",
+        venue: "Online Submission Gate",
+        detail: "Repair token refresh and transaction rollback failure scenarios, attach trace artifacts and link PR-42.",
+        assignmentId: "DS-907",
+        actionLabel: "Fix on Work Board (DS-907) →",
+        actionType: "workboard",
+      },
+    ],
+    14: [
+      {
+        id: "ev-14",
+        label: "DS-904 Faculty review & code signoff",
+        category: "official",
+        categoryLabel: "Official Milestone",
+        time: "11:00 IST",
+        reviewer: "Krishnasree K (Level Coordinator)",
+        venue: "Faculty Review Chamber 4",
+        detail: "Full-stack integration, architecture decision record (ADR) signoff, and PostgreSQL migration integrity.",
+        assignmentId: "DS-904",
+        actionLabel: "Open DS-904 on Work Board →",
+        actionType: "workboard",
+      },
+    ],
+    15: [
+      {
+        id: "ev-15",
+        label: "DS-905 API architecture check",
+        category: "review",
+        categoryLabel: "Peer & Mentor Review",
+        time: "15:30 IST",
+        reviewer: "Diju M (Team Mentor)",
+        venue: "Studio 2",
+        detail: "Review OpenAPI 3.1 specifications and schema rollback scripts before sprint freeze.",
+        assignmentId: "DS-905",
+        actionLabel: "View on Work Board →",
+        actionType: "workboard",
+      },
+    ],
+    16: [
+      {
+        id: "ev-16",
+        label: "Full-stack live demonstration · 10:30",
+        category: "review",
+        categoryLabel: "Faculty Review Panel",
+        time: "10:30 – 11:30 IST",
+        reviewer: "Krishnasree K · Ajitha V S",
+        venue: "Engineering Studio 2",
+        detail: "Demonstrate integrated workflow, automated tests, failure recovery, and reproducible local setup.",
+        assignmentId: "DS-904",
+        actionLabel: "View Faculty Feedback Brief →",
+        actionType: "feedback",
+      },
+    ],
+    18: [
+      {
+        id: "ev-18",
+        label: "AWS evidence verification",
+        category: "certification",
+        categoryLabel: "External Certification",
+        time: "17:00 IST",
+        reviewer: "Certification Advisory Board",
+        venue: "Credential Verification Portal",
+        detail: "Independent verification of AWS Certified Solutions Architect – Associate (SAA-C03) score report.",
+        actionLabel: "View Performance Record →",
+      },
+    ],
+    20: [
+      {
+        id: "ev-20",
+        label: "DS-907 final resubmission",
+        category: "official",
+        categoryLabel: "Official Deadline",
+        time: "23:59 IST",
+        reviewer: "Ajitha V S",
+        venue: "Final Evaluation Gate",
+        detail: "Final regression sign-off before Level 10 progression lock.",
+        assignmentId: "DS-907",
+        actionLabel: "Open Work Board →",
+        actionType: "workboard",
+      },
+    ],
+  };
+
+  const selectedEvents = calendarEvents[selectedDay] ?? [];
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="STUDENT CALENDAR · SEPTEMBER"
+        title="Plan around official academic commitments"
+        description="Faculty deadlines, reviews and certification checks are locked. Personal work-plan events remain editable and never represent attendance."
+        action="Add personal work block"
+        onAction={() => notify?.("Personal event editor opened")}
+      />
+
+      <article className="panel calendar-clarification-card">
+        <div className="calendar-clarification-icon">
+          <Icon name="shield" />
+        </div>
+        <div>
+          <span className="eyebrow">ACADEMIC WORK PLANNING ONLY</span>
+          <b>Calendar is for Academic Commitments — Attendance is Managed in DUK@360</b>
+          <p>
+            This calendar organizes your sprint milestones, live reviews, and submission deadlines. Daily student attendance, clock-in, and leave records are tracked exclusively in <strong>DUK@360</strong> and are never recorded here.
+          </p>
+        </div>
+      </article>
+
+      <article className="panel calendar-sprint-strip">
+        <div className="calendar-sprint-header">
+          <span className="eyebrow">LEVEL 9 · SPRINT PROGRESSION TIMELINE</span>
+          <b>Active Sprint: Sprint 04 · Verify (01–14 September)</b>
+        </div>
+        <div className="calendar-sprint-track">
+          <div className="sprint-segment done">
+            <b>Sprint 01</b>
+            <span>Contract (Completed)</span>
+          </div>
+          <div className="sprint-segment done">
+            <b>Sprint 02</b>
+            <span>Connect (Completed)</span>
+          </div>
+          <div className="sprint-segment done">
+            <b>Sprint 03</b>
+            <span>Persist (Completed)</span>
+          </div>
+          <div className="sprint-segment current">
+            <span className="pulse-dot" />
+            <b>Sprint 04 · Verify</b>
+            <span>01–14 Sep · Active Sprint</span>
+          </div>
+          <div className="sprint-segment upcoming">
+            <b>Sprint 05 · Demonstrate</b>
+            <span>15–21 Sep · Live Demo</span>
+          </div>
+        </div>
+      </article>
+
+      <div className="calendar-filter-bar">
+        <button
+          type="button"
+          className={`ev-filter-pill ${categoryFilter === "all" ? "active" : ""}`}
+          onClick={() => setCategoryFilter("all")}
+        >
+          All Events (7)
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${categoryFilter === "official" ? "active" : ""}`}
+          onClick={() => setCategoryFilter("official")}
+        >
+          Official Deadlines (3)
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${categoryFilter === "review" ? "active" : ""}`}
+          onClick={() => setCategoryFilter("review")}
+        >
+          Reviews &amp; Demos (2)
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${categoryFilter === "sprint" ? "active" : ""}`}
+          onClick={() => setCategoryFilter("sprint")}
+        >
+          Sprint Work (1)
+        </button>
+        <button
+          type="button"
+          className={`ev-filter-pill ${categoryFilter === "certification" ? "active" : ""}`}
+          onClick={() => setCategoryFilter("certification")}
+        >
+          Certification (1)
+        </button>
+      </div>
+
+      <div className="calendar-layout">
+        <article className="panel calendar-panel">
+          <div className="calendar-toolbar">
+            <div>
+              <button aria-label="Previous month" onClick={() => notify?.("August 2026 viewed")}><Icon name="chevron" /></button>
+              <h2>September 2026</h2>
+              <button aria-label="Next month" onClick={() => notify?.("October 2026 viewed")}><Icon name="arrow" /></button>
+            </div>
+            <button onClick={() => { setSelectedDay(3); notify?.("Today selected (03 September)"); }}>Today</button>
+          </div>
+
+          <div className="calendar-legend">
+            <span><i className="official" />Official · faculty controlled</span>
+            <span><i className="review-dot" />Review &amp; demo panel</span>
+            <span><i className="personal" />Personal work plan</span>
+            <span><i className="certification" />Certification</span>
+          </div>
+
+          <div className="calendar-grid">
+            <div className="weekdays">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                <b key={day}>{day}</b>
+              ))}
+            </div>
+            <div className="calendar-days">
+              <span className="empty" />
+              <span className="empty" />
+              {days.map((day) => {
+                const dayEvs = calendarEvents[day] ?? [];
+                const isSelected = selectedDay === day;
+                const isToday = day === 3;
+                return (
+                  <button
+                    type="button"
+                    className={`calendar-day-btn ${isToday ? "today" : ""} ${isSelected ? "selected-day" : ""} ${dayEvs.length > 0 ? "has-events" : ""}`}
+                    key={day}
+                    onClick={() => {
+                      setSelectedDay(day);
+                      notify?.(`${day} September selected`);
+                    }}
+                  >
+                    <time>{day}</time>
+                    {dayEvs.map((event) => (
+                      <small className={event.category} key={event.id}>
+                        {event.category === "official" && <Icon name="shield" />}
+                        {event.label}
+                      </small>
+                    ))}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="calendar-day-drawer">
+            <div className="day-drawer-header">
+              <div>
+                <span className="eyebrow">SELECTED DATE INSPECTION</span>
+                <h3>{selectedDay} September 2026</h3>
+              </div>
+              <span className="day-event-count">
+                {selectedEvents.length} {selectedEvents.length === 1 ? "Event" : "Events"}
+              </span>
+            </div>
+            {selectedEvents.length === 0 ? (
+              <div className="day-empty-state">
+                <p>No official deadlines or events scheduled for {selectedDay} September. You can use this day for personal sprint work.</p>
+                <button
+                  type="button"
+                  className="outcome-action-btn view-board"
+                  onClick={() => notify?.("Personal study session added")}
+                >
+                  + Add Personal Work Block
+                </button>
+              </div>
+            ) : (
+              <div className="day-events-list">
+                {selectedEvents.map((event) => (
+                  <div className="day-event-card" key={event.id}>
+                    <div className="day-event-card-top">
+                      <span className={`day-event-cat-badge ${event.category}`}>
+                        {event.categoryLabel}
+                      </span>
+                      {event.time && <span className="day-event-time">{event.time}</span>}
+                    </div>
+                    <h4>{event.label}</h4>
+                    <p>{event.detail}</p>
+                    <div className="day-event-meta">
+                      {event.reviewer && <span><strong>Reviewer:</strong> {event.reviewer}</span>}
+                      {event.venue && <span><strong>Venue:</strong> {event.venue}</span>}
+                    </div>
+                    {event.actionLabel && (
+                      <div className="day-event-actions">
+                        <button
+                          type="button"
+                          className="primary-button compact"
+                          onClick={() => {
+                            if (event.actionType === "feedback") {
+                              onNavigate?.("Faculty Feedback");
+                            } else if (event.assignmentId) {
+                              onNavigate?.("Work Board", event.assignmentId);
+                            } else {
+                              onNavigate?.("Performance & Results");
+                            }
+                          }}
+                        >
+                          {event.actionLabel}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
+
+        <aside className="calendar-side">
+          <article className="panel">
+            <PanelHeading label="UPCOMING" title="Academic commitments" meta="Next 17 days" />
+            <div className="agenda-list">
+              {[
+                ["05 SEP", "DS-907 revision due", "Official deadline · Due in 34h", "DS-907"],
+                ["14 SEP", "DS-904 faculty review", "Krishnasree K · In 9 days", "DS-904"],
+                ["16 SEP", "Full-stack live demonstration", "10:30 · Engineering Studio 2", "DS-904"],
+                ["18 SEP", "AWS SAA-C03 verification", "Certification record · In 13 days", ""],
+              ].map((item) => (
+                <button
+                  key={item[0]}
+                  type="button"
+                  onClick={() => {
+                    if (item[3]) {
+                      onNavigate?.("Work Board", item[3]);
+                    } else {
+                      onNavigate?.("Performance & Results");
+                    }
+                  }}
+                >
+                  <i>{item[0]}</i>
+                  <span>
+                    <b>{item[1]}</b>
+                    <small>{item[2]}</small>
+                  </span>
+                  <Icon name="arrow" />
+                </button>
+              ))}
+            </div>
+          </article>
+
+          <article className="panel calendar-boundary">
+            <Icon name="shield" />
+            <div>
+              <b>Calendar is not attendance</b>
+              <p>Events organise academic work. DUK@360 remains the only attendance system.</p>
+            </div>
+          </article>
+        </aside>
+      </div>
+    </>
+  );
 }
 
 function StudentInformationCentre({ notify }: { notify: (message: string) => void }) {
@@ -451,9 +2026,283 @@ function StudentInformationCentre({ notify }: { notify: (message: string) => voi
   </>;
 }
 
-function PerformancePage() {
-  const academic = useMemo(() => academicComponents.reduce((sum, [, score, weight]) => sum + score * weight / 100, 0), []);
-  return <><PageHeader eyebrow="PERFORMANCE & RESULTS" title="Academic evaluation and gamification shown separately" description="The Course Plan assessment view, Level 9 gamification points and AWS SAA-C03 verification are distinct records. Draft gamification rules remain subject to Programme Board approval." /><div className="reward-ledger"><article className="panel official"><span className="eyebrow">ACADEMIC RESULT · COURSE PLAN VIEW</span><div><b>{academic.toFixed(1)}%</b><i>Current calculation</i></div><p>Weighted academic components supported by reviewed full-stack evidence.</p></article><article className="panel mastery"><span className="eyebrow">LEVEL 9 GAMIFICATION · PROVISIONAL</span><div><b>780</b><i>/ 1,000 points</i></div><p>Illustrative points from the shared Level 9 rubric; not an academic mark.</p></article><article className="panel effort"><span className="eyebrow">AWS SAA-C03</span><div><b>Pending</b><i>verification</i></div><p>External certification evidence is tracked separately and does not determine the academic result.</p></article></div><article className="panel calculation-panel"><PanelHeading label="WEIGHTED ACADEMIC CALCULATION" title="Every contribution remains visible" meta="Gamification and attendance excluded" /><div className="calculation-table"><div><b>Assessment component</b><b>Score</b><b>Weight</b><b>Contribution</b></div>{academicComponents.map(([label, score, weight]) => <div key={label}><span>{label}</span><span>{score}%</span><span>{weight}%</span><strong>{(score * weight / 100).toFixed(1)}</strong></div>)}<div className="total"><b>Current academic result</b><span /><span>100%</span><strong>{academic.toFixed(1)}%</strong></div></div></article><article className="panel points-ledger"><PanelHeading label="LEVEL 9 POINTS LEDGER · PROVISIONAL" title="How 780 of 1,000 points are evidenced" meta="Shared Level 9 rubric" /><div className="points-head"><b>Component</b><b>Evidence basis</b><b>Verification</b><b>Awarded</b></div>{levelNinePoints.map((item) => <div className="points-row" key={item.component}><span><b>{item.component}</b><small>{item.maximum} maximum</small></span><span>{item.evidence}</span><i className={`status ${item.status.toLowerCase()}`}>{item.status}</i><strong>{item.awarded} / {item.maximum}</strong></div>)}<div className="points-total"><b>Total provisional points</b><span>Academic result and attendance excluded</span><strong>780 / 1,000</strong></div></article><article className="panel certification-record"><PanelHeading label="ONLINE CERTIFICATION RECORD" title="AWS Certified Solutions Architect – Associate" meta="SAA-C03" /><div><span><small>Provider</small><b>Amazon Web Services</b></span><span><small>Enrolment</small><b>Record not supplied</b></span><span><small>Learning modules</small><b>Record not supplied</b></span><span><small>Assessment evidence</small><b>Supplied · independent verification pending</b></span><span><small>Academic effect</small><b>Tracked separately; does not determine academic result</b></span></div></article><article className="panel mastery-rules"><PanelHeading label="RESULT BOUNDARIES" title="What each record means" meta="Prototype governance" /><div><span><Icon name="chart" /><p><b>Academic result</b>Course Plan components, rubric criteria and faculty-approved evidence.</p></span><span><Icon name="award" /><p><b>Gamification points</b>Motivational overlay from the draft Level 9 rubric; never substituted for marks.</p></span><span><Icon name="file" /><p><b>Certification status</b>AWS SAA-C03 evidence and independent verification status.</p></span><span><Icon name="shield" /><p><b>Excluded signals</b>Attendance, login frequency, time spent and after-hours activity.</p></span></div></article><article className="panel progression-panel"><PanelHeading label="DRAFT GAMIFICATION BANDS" title="Progression overlay from the shared rubric" meta="Programme Board approval pending" /><div>{[["0–49%", "Snake Zone", "Structured recovery"], ["50–69%", "Conditional Pass", "Remedial evidence"], ["70–89%", "Ladder Pass", "Progress to next level"], ["90–100%", "Distinction", "Progress with distinction"]].map((x, i) => <span className={i === 2 ? "active" : ""} key={x[0]}><b>{x[0]}</b><strong>{x[1]}</strong><small>{x[2]}</small></span>)}</div></article></>;
+function PerformancePage({ notify, onNavigate }: { notify?: (message: string) => void; onNavigate?: (page: string, assignmentId?: string) => void }) {
+  const [simFixDS907, setSimFixDS907] = useState(false);
+  const [simLiveDemo, setSimLiveDemo] = useState(false);
+
+  const baseAcademic = useMemo(() => academicComponents.reduce((sum, [, score, weight]) => sum + score * weight / 100, 0), []);
+  const basePoints = 780;
+
+  const simPoints = basePoints + (simFixDS907 ? 30 : 0) + (simLiveDemo ? 80 : 0);
+  const simAcademic = baseAcademic + (simLiveDemo ? (90 - 84) * 0.5 : 0) + (simFixDS907 ? (85 - 78) * 0.2 : 0);
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="PERFORMANCE & RESULTS"
+        title="Academic evaluation and gamification shown separately"
+        description="The Course Plan assessment view, Level 9 gamification points and AWS SAA-C03 verification are distinct records. Draft gamification rules remain subject to Programme Board approval."
+      />
+
+      <article className="panel scores-demystifier-card">
+        <div className="scores-demystifier-header">
+          <div className="scores-demystifier-icon">
+            <Icon name="chart" />
+          </div>
+          <div>
+            <span className="eyebrow">DEMYSTIFYING YOUR SCORES · LEVEL 9</span>
+            <h2>Understanding Academic Marks vs Quest Points</h2>
+            <p>
+              Students often ask: <em>&quot;Why are there two different numbers?&quot;</em> MSDSP strictly separates formal university grades from formative sprint gamification.
+            </p>
+          </div>
+        </div>
+        <div className="scores-triad-grid">
+          <div className="scores-triad-item official">
+            <div className="triad-item-badge">Official Grade</div>
+            <b>Academic Result ({baseAcademic.toFixed(1)}%)</b>
+            <p>
+              Governed by DUK University exam regulations. Calculated from 5 weighted Course Plan components. Directly determines your official semester Grade Point Average (GPA) and degree credits.
+            </p>
+          </div>
+          <div className="scores-triad-item gamification">
+            <div className="triad-item-badge">Sprint Pace</div>
+            <b>Quest Points (780 / 1000 pts)</b>
+            <p>
+              Agile development velocity metric. Helps you and your mentors track sprint momentum. Unlocks progression bands (Ladder Pass at 700+, Distinction at 900+). <strong>Never affects or lowers your GPA.</strong>
+            </p>
+          </div>
+          <div className="scores-triad-item certification">
+            <div className="triad-item-badge">Industry Credential</div>
+            <b>AWS SAA-C03 (Pending)</b>
+            <p>
+              Co-curricular industry credential verified independently. Adds distinct professional value to your placement profile without altering course grading.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <div className="reward-ledger">
+        <article className="panel official">
+          <span className="eyebrow">ACADEMIC RESULT · COURSE PLAN VIEW</span>
+          <div>
+            <b>{baseAcademic.toFixed(1)}%</b>
+            <i>Current calculation</i>
+          </div>
+          <p>Weighted academic components supported by reviewed full-stack evidence.</p>
+        </article>
+        <article className="panel mastery">
+          <span className="eyebrow">LEVEL 9 GAMIFICATION · PROVISIONAL</span>
+          <div>
+            <b>780</b>
+            <i>/ 1,000 points</i>
+          </div>
+          <p>Illustrative points from the shared Level 9 rubric; not an academic mark.</p>
+        </article>
+        <article className="panel effort">
+          <span className="eyebrow">AWS SAA-C03</span>
+          <div>
+            <b>Pending</b>
+            <i>verification</i>
+          </div>
+          <p>External certification evidence is tracked separately and does not determine the academic result.</p>
+        </article>
+      </div>
+
+      <article className="panel what-if-simulator-card">
+        <div className="simulator-header">
+          <div className="sim-title-wrap">
+            <span className="eyebrow">INTERACTIVE PROGRESSION SIMULATOR</span>
+            <h3>What-If Grade &amp; Points Projector</h3>
+            <p>See in real time how closing active revision gaps and nailing upcoming reviews elevates your standing.</p>
+          </div>
+          <div className="sim-score-badges">
+            <div className="sim-score-box">
+              <small>PROJECTED POINTS</small>
+              <b className={simPoints > basePoints ? "projected" : ""}>{simPoints} / 1000</b>
+              <span>{simPoints >= 890 ? "Distinction Pace ⭐" : "Ladder Pass"}</span>
+            </div>
+            <div className="sim-score-box">
+              <small>PROJECTED MARK</small>
+              <b className={simAcademic > baseAcademic ? "projected" : ""}>{simAcademic.toFixed(1)}%</b>
+              <span>{simAcademic > baseAcademic ? `+${(simAcademic - baseAcademic).toFixed(1)}% boost` : "Base result"}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="simulator-toggles">
+          <label className={`sim-toggle-pill ${simFixDS907 ? "active" : ""}`}>
+            <input
+              type="checkbox"
+              checked={simFixDS907}
+              onChange={() => {
+                setSimFixDS907(!simFixDS907);
+                notify?.(!simFixDS907 ? "Simulator: DS-907 resolution applied (+30 pts)" : "Simulator: DS-907 reset");
+              }}
+            />
+            <div>
+              <b>Fix DS-907 Quality Gate (+30 Quest Points)</b>
+              <small>Repair token refresh &amp; rollback traces; clears PO4 and PSO1 evidence gap</small>
+            </div>
+          </label>
+
+          <label className={`sim-toggle-pill ${simLiveDemo ? "active" : ""}`}>
+            <input
+              type="checkbox"
+              checked={simLiveDemo}
+              onChange={() => {
+                setSimLiveDemo(!simLiveDemo);
+                notify?.(!simLiveDemo ? "Simulator: Live Demo distinction applied (+80 pts)" : "Simulator: Live Demo reset");
+              }}
+            />
+            <div>
+              <b>Score 90% on Live Demonstration (+80 Quest Points)</b>
+              <small>16 Sep Live Demo with Krishnasree K; boosts Live Project component to 90%</small>
+            </div>
+          </label>
+        </div>
+
+        {simPoints >= 890 && (
+          <div className="distinction-unlocked-banner">
+            <Icon name="award" />
+            <div>
+              <b>🎉 Distinction Band Projection Unlocked! ({simPoints} / 1000 pts)</b>
+              <p>Completing both items elevates you into the top 90%+ performance band for Level 9 graduation honours.</p>
+            </div>
+          </div>
+        )}
+      </article>
+
+      <article className="panel calculation-panel">
+        <PanelHeading
+          label="WEIGHTED ACADEMIC CALCULATION"
+          title="Every contribution remains visible"
+          meta="Gamification and attendance excluded"
+        />
+        <div className="calculation-table">
+          <div>
+            <b>Assessment component</b>
+            <b>Supporting Evidence / Task</b>
+            <b>Score</b>
+            <b>Weight</b>
+            <b>Contribution</b>
+          </div>
+          {[
+            ["Live Project Work", "DS-904 Full-Stack Capstone & PR-42", 84, 50, "DS-904"],
+            ["Product Milestones", "DS-905 API & DS-907 Quality Gate", 78, 20, "DS-907"],
+            ["Documentation & Process", "Architecture Decision Record (ADR-04)", 88, 10, "DS-904"],
+            ["Continuous Evaluation", "Sprint commits, pull-request code reviews", 81, 10, "DS-904"],
+            ["Theory Examination", "Continuous Internal Assessment (CIA)", 76, 10, ""],
+          ].map(([label, source, score, weight, navId]) => (
+            <div key={String(label)}>
+              <span>{String(label)}</span>
+              <span className="calc-source-pill">
+                {navId ? (
+                  <button
+                    type="button"
+                    className="calc-link-btn"
+                    onClick={() => onNavigate?.("Work Board", String(navId))}
+                    title={`View ${source} on Work Board`}
+                  >
+                    {String(source)} →
+                  </button>
+                ) : (
+                  <span>{String(source)}</span>
+                )}
+              </span>
+              <span>{score}%</span>
+              <span>{weight}%</span>
+              <strong>{(Number(score) * Number(weight) / 100).toFixed(1)}</strong>
+            </div>
+          ))}
+          <div className="total">
+            <b>Current academic result</b>
+            <span />
+            <span />
+            <span>100%</span>
+            <strong>{baseAcademic.toFixed(1)}%</strong>
+          </div>
+        </div>
+      </article>
+
+      <article className="panel points-ledger">
+        <PanelHeading
+          label="LEVEL 9 POINTS LEDGER · PROVISIONAL"
+          title="How 780 of 1,000 points are evidenced"
+          meta="Shared Level 9 rubric"
+        />
+        <div className="points-head">
+          <b>Component</b>
+          <b>Evidence basis</b>
+          <b>Verification</b>
+          <b>Awarded</b>
+        </div>
+        {levelNinePoints.map((item) => (
+          <div className="points-row" key={item.component}>
+            <span>
+              <b>{item.component}</b>
+              <small>{item.maximum} maximum</small>
+            </span>
+            <span>{item.evidence}</span>
+            <i className={`status ${item.status.toLowerCase()}`}>{item.status}</i>
+            <strong>{item.awarded} / {item.maximum}</strong>
+          </div>
+        ))}
+        <div className="points-total">
+          <b>Total provisional points</b>
+          <span>Academic result and attendance excluded</span>
+          <strong>780 / 1,000</strong>
+        </div>
+      </article>
+
+      <article className="panel certification-record">
+        <PanelHeading
+          label="ONLINE CERTIFICATION RECORD"
+          title="AWS Certified Solutions Architect – Associate"
+          meta="SAA-C03"
+        />
+        <div>
+          <span><small>Provider</small><b>Amazon Web Services</b></span>
+          <span><small>Enrolment</small><b>Record not supplied</b></span>
+          <span><small>Learning modules</small><b>Record not supplied</b></span>
+          <span><small>Assessment evidence</small><b>Supplied · independent verification pending</b></span>
+          <span><small>Academic effect</small><b>Tracked separately; does not determine academic result</b></span>
+        </div>
+      </article>
+
+      <article className="panel mastery-rules">
+        <PanelHeading label="RESULT BOUNDARIES" title="What each record means" meta="Prototype governance" />
+        <div>
+          <span><Icon name="chart" /><p><b>Academic result</b>Course Plan components, rubric criteria and faculty-approved evidence.</p></span>
+          <span><Icon name="award" /><p><b>Gamification points</b>Motivational overlay from the draft Level 9 rubric; never substituted for marks.</p></span>
+          <span><Icon name="file" /><p><b>Certification status</b>AWS SAA-C03 evidence and independent verification status.</p></span>
+          <span><Icon name="shield" /><p><b>Excluded signals</b>Attendance, login frequency, time spent and after-hours activity.</p></span>
+        </div>
+      </article>
+
+      <article className="panel progression-panel">
+        <PanelHeading
+          label="DRAFT GAMIFICATION BANDS"
+          title="Progression overlay from the shared rubric"
+          meta="Programme Board approval pending"
+        />
+        <div>
+          {[
+            ["0–49%", "Snake Zone", "Structured recovery"],
+            ["50–69%", "Conditional Pass", "Remedial evidence"],
+            ["70–89%", "Ladder Pass", "★ Current: 780 pts · Progress to next level"],
+            ["90–100%", "Distinction", "Distinction honors · 120 pts to unlock"],
+          ].map((x, i) => (
+            <span className={i === 2 ? "active current-ladder" : ""} key={x[0]}>
+              <b>{x[0]}</b>
+              <strong>{x[1]}</strong>
+              <small>{x[2]}</small>
+            </span>
+          ))}
+        </div>
+      </article>
+    </>
+  );
 }
 
 function MentorWorkspace({ page, cycle, mentorKind, notify }: { page: string; cycle: Cycle; mentorKind: MentorKind; notify: (message: string) => void }) {
